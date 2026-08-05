@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CinéPass</string>
+
+    <string name="tickets_title">Mes billets</string>
+    <string name="tab_upcoming">À venir</string>
+    <string name="tab_archive">Archives</string>
+    <string name="add_ticket">Ajouter un billet</string>
+    <string name="edit_ticket">Modifier le billet</string>
+    <string name="empty_upcoming">Aucune séance à venir.\nAppuyez sur + pour ajouter un billet.</string>
+    <string name="empty_archive">Aucun billet archivé pour l\'instant.</string>
+
+    <string name="field_movie">Titre du film</string>
+    <string name="field_cinema">Cinéma</string>
+    <string name="field_room">Salle</string>
+    <string name="field_seats">Sièges</string>
+    <string name="field_reference">Référence de réservation</string>
+    <string name="field_barcode_value">Contenu du code-barres</string>
+    <string name="field_barcode_format">Format du code</string>
+    <string name="field_notes">Notes</string>
+    <string name="field_date">Date de la séance</string>
+    <string name="field_time">Heure de la séance</string>
+    <string name="field_poster">Affiche</string>
+
+    <string name="action_save">Enregistrer</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_delete">Supprimer</string>
+    <string name="action_archive">Archiver</string>
+    <string name="action_unarchive">Désarchiver</string>
+    <string name="action_pick_poster">Choisir une affiche</string>
+    <string name="action_remove_poster">Retirer l\'affiche</string>
+    <string name="action_add_to_wallet">Ajouter à Google Wallet</string>
+
+    <string name="brightness_boost">Luminosité maximale</string>
+    <string name="brightness_hint">L\'écran passe automatiquement en luminosité maximale pour faciliter la lecture du code par le scanner.</string>
+
+    <string name="wallet_saved">Billet ajouté à Google Wallet.</string>
+    <string name="wallet_cancelled">Ajout à Google Wallet annulé.</string>
+    <string name="wallet_unavailable">Google Wallet n\'est pas disponible sur cet appareil.</string>
+    <string name="wallet_not_configured">Google Wallet n\'est pas configuré (identifiant émetteur ou source du JWT manquant).</string>
+
+    <string name="error_movie_required">Le titre du film est obligatoire.</string>
+    <string name="error_cinema_required">Le nom du cinéma est obligatoire.</string>
+    <string name="error_barcode_required">Le contenu du code-barres est obligatoire.</string>
+</resources>
