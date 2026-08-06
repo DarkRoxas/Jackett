@@ -84,7 +84,13 @@ fun OnboardingScreen(
             )
         }
 
-        SettingsForm(settings = state.settings, onChange = viewModel::onFieldChange)
+        SettingsForm(
+            state = state,
+            onChange = viewModel::onFieldChange,
+            onImportServiceAccount = viewModel::importServiceAccount,
+            onIssuerChosen = viewModel::onIssuerChosen,
+            onClearWallet = viewModel::clearWallet,
+        )
 
         Button(
             onClick = { viewModel.save(markOnboardingDone = true, onSaved = onDone) },

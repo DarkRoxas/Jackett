@@ -34,10 +34,6 @@ object WalletJwt {
             "Signature locale impossible : compte de service ou clé privée manquant."
         }
 
-        val header = JSONObject()
-            .put("alg", "RS256")
-            .put("typ", "JWT")
-
         val claims = JSONObject()
             .put("iss", issuer)
             .put("aud", "google")
@@ -45,6 +41,15 @@ object WalletJwt {
             .put("iat", System.currentTimeMillis() / 1000)
             .put("origins", JSONArray())
             .put("payload", payload)
+
+        return signClaims(claims, privateKeyPem)
+    }
+
+    /** Signe un jeu de claims quelconque : « savetowallet » ou assertion OAuth2. */
+    internal fun signClaims(claims: JSONObject, privateKeyPem: String): String {
+        val header = JSONObject()
+            .put("alg", "RS256")
+            .put("typ", "JWT")
 
         val signingInput = "${encode(header.toString())}.${encode(claims.toString())}"
         val signature = Signature.getInstance("SHA256withRSA").apply {

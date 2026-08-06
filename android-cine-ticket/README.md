@@ -55,9 +55,25 @@ aucune recompilation n'est nécessaire.
 | Réglage | À quoi il sert | Où le trouver |
 |---|---|---|
 | Clé d'API TMDB | Recherche de films (titre, année, affiche) | <https://www.themoviedb.org/settings/api>, clé v3, gratuite |
-| Identifiant émetteur | Rattache le pass à votre compte Google Wallet | <https://pay.google.com/business/console> |
-| Adresse du service de signature | Signe le pass côté serveur | votre backend, voir [`backend-sample/`](backend-sample/) |
-| Compte de service + clé privée | Signature sur l'appareil, pour dépanner | clé JSON du compte de service |
+| Fichier JSON du compte de service | **Tout Google Wallet, en un seul import** | clé du compte de service, console Google Cloud |
+
+### Google Wallet en un import
+
+Le bouton « Importer le fichier JSON » lit le compte de service et sa clé, puis
+interroge l'API Wallet (`GET /walletobjects/v1/issuer`, via une assertion OAuth2
+signée avec cette clé) pour retrouver **l'identifiant émetteur associé au
+compte**. Il n'y a donc rien à recopier : si le compte n'a accès qu'à un seul
+émetteur, il est retenu d'office ; s'il en a plusieurs, l'app les propose.
+
+Prérequis côté Google, une fois pour toutes : un compte émetteur sur
+<https://pay.google.com/business/console>, un compte de service avec sa clé JSON,
+et ce compte ajouté comme utilisateur de l'émetteur dans la console Wallet.
+
+Les champs manuels (identifiant émetteur, service de signature, nom affiché,
+suffixe de classe) restent accessibles sous « Réglages manuels ». Renseigner un
+**service de signature** ([`backend-sample/`](backend-sample/)) reste la seule
+manière d'éviter que la clé privée soit stockée sur le téléphone ; elle est
+prioritaire sur la signature locale quand les deux sont configurées.
 
 Tout champ laissé vide retombe sur la valeur de compilation issue de
 `local.properties` (voir plus bas), ce qui laisse le mode développement intact.

@@ -12,6 +12,7 @@ import fr.cinepass.ticket.data.MovieSearchRepository
 import fr.cinepass.ticket.data.SettingsRepository
 import fr.cinepass.ticket.data.TicketRepository
 import fr.cinepass.ticket.wallet.WalletConfig
+import fr.cinepass.ticket.wallet.WalletIssuerDiscovery
 import fr.cinepass.ticket.wallet.WalletRepository
 
 /** Conteneur d'injection minimaliste : pas besoin d'un framework DI ici. */
@@ -29,6 +30,7 @@ class AppContainer(context: Context) {
     val movieSearchRepository = MovieSearchRepository {
         settingsRepository.current().tmdbApiKey.ifBlank { BuildConfig.TMDB_API_KEY }
     }
+    val walletIssuerDiscovery = WalletIssuerDiscovery()
 }
 
 class CinePassApplication : Application(), ImageLoaderFactory {

@@ -22,7 +22,12 @@ object CinePassViewModelFactories {
     }
 
     val settings = viewModelFactory {
-        initializer { SettingsViewModel(this.container.settingsRepository) }
+        initializer {
+            SettingsViewModel(
+                repository = this.container.settingsRepository,
+                issuerDiscovery = this.container.walletIssuerDiscovery,
+            )
+        }
     }
 
     fun detail(ticketId: String) = viewModelFactory {

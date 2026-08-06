@@ -47,6 +47,10 @@ fun SettingsScreen(
         if (state.saved) snackbarHostState.showSnackbar("Réglages enregistrés.")
     }
 
+    LaunchedEffect(state.importSuccess) {
+        state.importSuccess?.let { snackbarHostState.showSnackbar(it) }
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -76,8 +80,11 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             SettingsForm(
-                settings = state.settings,
+                state = state,
                 onChange = viewModel::onFieldChange,
+                onImportServiceAccount = viewModel::importServiceAccount,
+                onIssuerChosen = viewModel::onIssuerChosen,
+                onClearWallet = viewModel::clearWallet,
             )
 
             Button(
