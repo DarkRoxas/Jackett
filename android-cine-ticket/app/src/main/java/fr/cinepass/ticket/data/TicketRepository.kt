@@ -6,6 +6,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.UUID
 
 class TicketRepository(
@@ -42,6 +44,27 @@ class TicketRepository(
             context.contentResolver.openInputStream(source)?.use { input ->
                 target.outputStream().use { output -> input.copyTo(output) }
             } ?: return@runCatching null
+            Uri.fromFile(target).toString()
+        }.getOrNull()
+    }
+
+    /** Télécharge l'affiche TMDB pour que le billet reste consultable hors ligne. */
+    suspend fun importPosterFromUrl(url: String): String? = withContext(Dispatchers.IO) {
+        val dir = File(context.filesDir, POSTER_DIR).apply { mkdirs() }
+        val target = File(dir, "${UUID.randomUUID()}.jpg")
+        runCatching {
+            val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 15_000
+                readTimeout = 20_000
+            }
+            try {
+                if (connection.responseCode !in 200..299) return@runCatching null
+                connection.inputStream.use { input ->
+                    target.outputStream().use { output -> input.copyTo(output) }
+                }
+            } finally {
+                connection.disconnect()
+            }
             Uri.fromFile(target).toString()
         }.getOrNull()
     }

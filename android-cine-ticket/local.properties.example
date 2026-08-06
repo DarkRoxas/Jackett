@@ -3,6 +3,12 @@
 
 sdk.dir=/chemin/vers/Android/sdk
 
+# --- Recherche de films (facultatif) ---
+
+# Clé d'API TMDB (v3) : https://www.themoviedb.org/settings/api
+# Sans elle, la recherche est désactivée et le titre se saisit à la main.
+TMDB_API_KEY=
+
 # --- Google Wallet (facultatif : sans ces valeurs, seul le bouton Wallet est inactif) ---
 
 # Identifiant émetteur : https://pay.google.com/business/console

@@ -32,7 +32,9 @@ object WalletPassBuilder {
             put("id", config.classId)
             put("issuerName", config.issuerName)
             put("reviewStatus", "UNDER_REVIEW")
-            put("eventName", localized(ticket.movieTitle))
+            // displayTitle inclut l'année : deux homonymes restent distinguables
+            // dans Wallet, où le titre est le seul repère du pass.
+            put("eventName", localized(ticket.displayTitle))
             put("venue", JSONObject().apply {
                 put("name", localized(ticket.cinemaName))
                 put("address", localized(ticket.cinemaName))

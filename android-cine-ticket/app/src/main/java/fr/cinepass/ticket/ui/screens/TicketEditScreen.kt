@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -21,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -51,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -78,8 +82,16 @@ fun TicketEditScreen(
     ),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val searchState by viewModel.search.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+
+    MovieSearchDialog(
+        state = searchState,
+        onQueryChange = viewModel::onSearchQueryChange,
+        onSelect = viewModel::onMovieSelected,
+        onDismiss = viewModel::closeMovieSearch,
+    )
 
     val posterPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
@@ -126,8 +138,37 @@ fun TicketEditScreen(
                 singleLine = true,
                 isError = state.movieError != null,
                 supportingText = state.movieError?.let { error -> { Text(error) } },
+                trailingIcon = {
+                    IconButton(onClick = viewModel::openMovieSearch) {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = stringResource(R.string.action_search_movie),
+                        )
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = state.releaseYear,
+                    onValueChange = viewModel::onReleaseYearChange,
+                    label = { Text(stringResource(R.string.field_release_year)) },
+                    singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next,
+                    ),
+                    modifier = Modifier.width(140.dp),
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = stringResource(R.string.release_year_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+            }
 
             OutlinedTextField(
                 value = state.cinemaName,
@@ -207,6 +248,7 @@ fun TicketEditScreen(
 
             PosterPicker(
                 posterUri = state.posterUri,
+                downloading = state.posterDownloading,
                 onPick = {
                     posterPicker.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
@@ -323,19 +365,33 @@ private fun BarcodeFormatDropdown(
 }
 
 @Composable
-private fun PosterPicker(posterUri: String?, onPick: () -> Unit, onClear: () -> Unit) {
+private fun PosterPicker(
+    posterUri: String?,
+    downloading: Boolean,
+    onPick: () -> Unit,
+    onClear: () -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.field_poster), style = MaterialTheme.typography.labelLarge)
 
-        if (posterUri != null) {
-            AsyncImage(
+        when {
+            downloading -> Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = stringResource(R.string.poster_downloading),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            // Aperçu non rogné : c'est l'affiche entière qui sera montrée sur le billet.
+            posterUri != null -> AsyncImage(
                 model = posterUri,
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.Fit,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(16f / 9f)
-                    .clip(RoundedCornerShape(16.dp)),
+                    .height(220.dp)
+                    .clip(RoundedCornerShape(12.dp)),
             )
         }
 

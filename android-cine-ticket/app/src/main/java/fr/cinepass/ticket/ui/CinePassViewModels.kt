@@ -35,6 +35,7 @@ object CinePassViewModelFactories {
             TicketEditViewModel(
                 ticketId = ticketId,
                 repository = this.container.ticketRepository,
+                movieSearchRepository = this.container.movieSearchRepository,
             )
         }
     }

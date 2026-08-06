@@ -11,8 +11,12 @@ enregistre comme billets électroniques dans **Google Wallet (Google Pay)**.
 
 | | |
 |---|---|
-| **Archivage local** | Base Room chiffrée par le stockage privé de l'app : film, cinéma, date/heure, salle, sièges, référence, notes, affiche. |
+| **Archivage local** | Base Room chiffrée par le stockage privé de l'app : film, année, cinéma, date/heure, salle, sièges, référence, notes, affiche. |
+| **Recherche de films** | Recherche TMDB depuis le formulaire : le titre, l'année et l'affiche sélectionnés remplissent la fiche, et l'affiche est téléchargée en local pour rester consultable hors ligne. |
+| **Année de sortie** | Affichée partout sous la forme « Dune (2021) », y compris dans le pass Wallet : deux films homonymes restent distinguables. |
 | **Onglets À venir / Archives** | Un billet bascule automatiquement dans les archives 4 h après le début de la séance ; l'archivage manuel reste possible. |
+| **Mise en page façon Wallet** | Informations de séance, code-barres compact, puis l'affiche entière — jamais rognée — sur toute la largeur. |
+| **Plein écran** | Un appui sur l'affiche ou sur le code l'ouvre seul à l'écran : barres système masquées, luminosité au maximum, fond noir pour l'affiche et blanc pour le code. |
 | **Code-barres** | Rendu local via ZXing : QR Code, Aztec, PDF417, Data Matrix, Code 128, Code 39, EAN-13, ITF. Toujours affiché noir sur blanc, quel que soit le thème. |
 | **Luminosité maximale** | À l'ouverture d'un billet, l'écran passe au maximum et la mise en veille est bloquée, pour que le scanner de la salle lise le code même en plein jour. Réglage système inchangé, valeur restaurée en quittant l'écran. |
 | **Google Wallet** | Bouton « Ajouter à Google Wallet » : génère un pass `EventTicket` (film, cinéma, date, salle, siège, code-barres) et l'enregistre via `PayClient.savePassesJwt`. |
@@ -33,6 +37,18 @@ cd android-cine-ticket
 Le workflow `.github/workflows/android-cine-ticket.yml` exécute ces deux commandes
 à chaque push touchant ce dossier et publie l'APK debug en artefact — pratique
 pour récupérer un build sans installer le SDK.
+
+## Configuration de la recherche de films
+
+Créez une clé d'API v3 sur <https://www.themoviedb.org/settings/api> (gratuite),
+puis dans `local.properties` :
+
+```properties
+TMDB_API_KEY=votre_cle
+```
+
+Sans clé, le bouton de recherche explique ce qui manque et la saisie manuelle du
+titre et de l'année reste disponible.
 
 ## Configuration Google Wallet
 
@@ -100,7 +116,8 @@ plutôt que par `local.properties`.
 app/src/main/java/fr/cinepass/ticket/
 ├── CinePassApplication.kt      conteneur d'injection minimaliste
 ├── MainActivity.kt             hôte Compose + retour de PayClient (onActivityResult)
-├── data/                       entité Ticket, DAO, base Room, dépôt (+ import d'affiche)
+├── data/                       entité Ticket, DAO, base Room, dépôt (+ import d'affiche),
+│                               recherche TMDB
 ├── wallet/
 │   ├── WalletConfig.kt         configuration issue de BuildConfig
 │   ├── WalletPassBuilder.kt    charge utile EventTicketClass / EventTicketObject
@@ -112,7 +129,8 @@ app/src/main/java/fr/cinepass/ticket/
 │   ├── components/
 │   │   ├── BarcodeView.kt      rendu ZXing
 │   │   └── MaxBrightness.kt    override de luminosité limité à la fenêtre de l'app
-│   ├── screens/                liste, détail, formulaire (+ ViewModels)
+│   ├── screens/                liste, détail, formulaire, recherche de films,
+│   │                           vue plein écran (+ ViewModels)
 │   └── theme/
 └── util/DateTimeFormat.kt      formats français, conversions UTC du DatePicker
 ```

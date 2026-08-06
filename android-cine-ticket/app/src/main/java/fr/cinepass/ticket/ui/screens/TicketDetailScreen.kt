@@ -1,17 +1,18 @@
 package fr.cinepass.ticket.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,9 +26,9 @@ import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -63,7 +64,7 @@ import fr.cinepass.ticket.ui.CinePassViewModelFactories
 import fr.cinepass.ticket.ui.components.BarcodeView
 import fr.cinepass.ticket.ui.components.MaxBrightnessEffect
 import fr.cinepass.ticket.ui.components.findActivity
-import fr.cinepass.ticket.util.formatFullDate
+import fr.cinepass.ticket.util.formatShortDate
 import fr.cinepass.ticket.util.formatTime
 import fr.cinepass.ticket.wallet.WalletRepository
 
@@ -73,6 +74,7 @@ fun TicketDetailScreen(
     ticketId: String,
     onBack: () -> Unit,
     onEdit: (String) -> Unit,
+    onOpenViewer: (String, ViewerMode) -> Unit,
     walletRepository: WalletRepository,
     viewModel: TicketDetailViewModel = viewModel(
         factory = CinePassViewModelFactories.detail(ticketId),
@@ -147,54 +149,57 @@ fun TicketDetailScreen(
             return@Scaffold
         }
 
+        // Ordre repris de Google Wallet : les informations, puis un code-barres
+        // compact, puis l'affiche qui occupe tout le reste de l'écran.
         Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Spacer(Modifier.height(0.dp))
+            PassCard(
+                ticket = current,
+                onBarcodeClick = { onOpenViewer(current.id, ViewerMode.BARCODE) },
+            )
 
             current.posterUri?.let { poster ->
                 AsyncImage(
                     model = poster,
-                    contentDescription = "Affiche du film",
-                    contentScale = ContentScale.Crop,
+                    contentDescription = stringResource(R.string.poster_fullscreen),
+                    // FillWidth dans une colonne scrollable : la hauteur suit le
+                    // ratio réel de l'affiche, donc plus aucun rognage.
+                    contentScale = ContentScale.FillWidth,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .clip(RoundedCornerShape(16.dp)),
+                        .clickable { onOpenViewer(current.id, ViewerMode.POSTER) },
                 )
             }
 
-            ScreeningSummary(current)
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                BrightnessToggle(enabled = brightnessBoost, onToggle = viewModel::setBrightnessBoost)
 
-            BarcodeCard(current)
+                WalletButton(
+                    busy = walletBusy,
+                    alreadySaved = current.addedToWalletAt != null,
+                    onClick = viewModel::addToWallet,
+                )
 
-            BrightnessToggle(
-                enabled = brightnessBoost,
-                onToggle = viewModel::setBrightnessBoost,
-            )
-
-            WalletButton(
-                busy = walletBusy,
-                alreadySaved = current.addedToWalletAt != null,
-                onClick = viewModel::addToWallet,
-            )
-
-            current.notes?.takeIf { it.isNotBlank() }?.let { notes ->
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("Notes", style = MaterialTheme.typography.labelLarge)
-                        Spacer(Modifier.height(4.dp))
-                        Text(notes, style = MaterialTheme.typography.bodyMedium)
+                current.notes?.takeIf { it.isNotBlank() }?.let { notes ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text("Notes", style = MaterialTheme.typography.labelLarge)
+                            Spacer(Modifier.height(4.dp))
+                            Text(notes, style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                 }
-            }
 
-            Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(16.dp))
+            }
         }
     }
 
@@ -218,70 +223,126 @@ fun TicketDetailScreen(
     }
 }
 
+/**
+ * Le « pass » proprement dit : informations de séance et code-barres compact,
+ * sur un fond clair constant — c'est aussi ce que voit un contrôleur.
+ */
 @Composable
-private fun ScreeningSummary(ticket: Ticket) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(ticket.movieTitle, style = MaterialTheme.typography.headlineSmall)
-            Text(ticket.cinemaName, style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = "${formatFullDate(ticket.screeningAt)} à ${formatTime(ticket.screeningAt)}",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                ticket.room?.takeIf { it.isNotBlank() }?.let { InfoBlock("Salle", it) }
-                ticket.seats?.takeIf { it.isNotBlank() }?.let { InfoBlock("Sièges", it) }
-            }
-            ticket.bookingReference?.takeIf { it.isNotBlank() }?.let {
-                InfoBlock("Référence", it)
-            }
-        }
-    }
-}
-
-@Composable
-private fun InfoBlock(label: String, value: String) {
-    Column {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(text = value, style = MaterialTheme.typography.titleMedium)
-    }
-}
-
-@Composable
-private fun BarcodeCard(ticket: Ticket) {
-    // Carte volontairement blanche en clair comme en sombre : les scanners
-    // s'appuient sur le contraste noir sur blanc.
+private fun PassCard(ticket: Ticket, onBarcodeClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 12.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(Color.White)
-            .padding(20.dp),
+            .background(PASS_BACKGROUND),
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-            BarcodeView(content = ticket.barcodeValue, format = ticket.barcodeFormat)
-            Spacer(Modifier.height(12.dp))
+        Column(Modifier.padding(20.dp)) {
             Text(
-                text = ticket.barcodeValue,
-                style = MaterialTheme.typography.bodySmall,
-                fontFamily = FontFamily.Monospace,
-                color = Color(0xFF444444),
-                textAlign = TextAlign.Center,
+                text = ticket.cinemaName,
+                style = MaterialTheme.typography.bodyLarge,
+                color = PASS_SECONDARY,
             )
+            Spacer(Modifier.height(2.dp))
             Text(
-                text = ticket.barcodeFormat.label,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF888888),
+                text = ticket.displayTitle,
+                style = MaterialTheme.typography.headlineSmall,
+                color = PASS_PRIMARY,
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            Row(Modifier.fillMaxWidth()) {
+                PassField("Date", formatShortDate(ticket.screeningAt), Modifier.weight(1f))
+                PassField("Heure", formatTime(ticket.screeningAt), Modifier.weight(1f), TextAlign.End)
+            }
+
+            val room = ticket.room?.takeIf { it.isNotBlank() }
+            val seats = ticket.seats?.takeIf { it.isNotBlank() }
+            if (room != null || seats != null) {
+                Spacer(Modifier.height(12.dp))
+                Row(Modifier.fillMaxWidth()) {
+                    room?.let { PassField("Salle", it, Modifier.weight(1f)) }
+                    seats?.let { PassField("Sièges", it, Modifier.weight(1f), TextAlign.End) }
+                }
+            }
+
+            ticket.bookingReference?.takeIf { it.isNotBlank() }?.let {
+                Spacer(Modifier.height(12.dp))
+                PassField("Référence", it, Modifier.fillMaxWidth())
+            }
+
+            Spacer(Modifier.height(16.dp))
+            HorizontalDivider(color = PASS_SECONDARY.copy(alpha = 0.2f))
+            Spacer(Modifier.height(16.dp))
+
+            CompactBarcode(ticket = ticket, onClick = onBarcodeClick)
+        }
+    }
+}
+
+@Composable
+private fun PassField(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    textAlign: TextAlign = TextAlign.Start,
+) {
+    Column(modifier) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = PASS_SECONDARY,
+            textAlign = textAlign,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            color = PASS_PRIMARY,
+            textAlign = textAlign,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/**
+ * Code-barres réduit, comme sur un pass Wallet : il reste lisible de près, et
+ * un appui ouvre la vue plein écran pour le passage sous un scanner.
+ */
+@Composable
+private fun CompactBarcode(ticket: Ticket, onClick: () -> Unit) {
+    val width = if (ticket.barcodeFormat.isTwoDimensional) 180.dp else 280.dp
+
+    Column(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.White)
+                .padding(10.dp),
+        ) {
+            BarcodeView(
+                content = ticket.barcodeValue,
+                format = ticket.barcodeFormat,
+                modifier = Modifier.width(width),
             )
         }
+
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.tap_to_enlarge),
+            style = MaterialTheme.typography.labelSmall,
+            color = PASS_SECONDARY,
+        )
+        Text(
+            text = ticket.barcodeValue,
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = FontFamily.Monospace,
+            color = PASS_SECONDARY,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -329,3 +390,9 @@ private fun WalletButton(busy: Boolean, alreadySaved: Boolean, onClick: () -> Un
         }
     }
 }
+
+// Le pass garde les mêmes couleurs en thème clair et sombre : c'est un document
+// qu'on présente, pas une surface de l'application.
+private val PASS_BACKGROUND = Color(0xFFEAF1F1)
+private val PASS_PRIMARY = Color(0xFF16191C)
+private val PASS_SECONDARY = Color(0xFF5A6165)

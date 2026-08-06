@@ -7,15 +7,15 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// Configuration Google Wallet : renseignée dans local.properties (non versionné)
-// ou via des variables d'environnement sur le poste / la CI.
-val walletProps = Properties().apply {
+// Configuration Google Wallet et TMDB : renseignée dans local.properties
+// (non versionné) ou via des variables d'environnement sur le poste / la CI.
+val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) f.inputStream().use { load(it) }
 }
 
-fun walletConfig(key: String): String =
-    (walletProps.getProperty(key) ?: System.getenv(key) ?: "")
+fun localConfig(key: String): String =
+    (localProps.getProperty(key) ?: System.getenv(key) ?: "")
 
 android {
     namespace = "fr.cinepass.ticket"
@@ -31,24 +31,27 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Identifiant émetteur de la console Google Wallet (ex : 3388000000012345678)
-        buildConfigField("String", "WALLET_ISSUER_ID", "\"${walletConfig("WALLET_ISSUER_ID")}\"")
+        buildConfigField("String", "WALLET_ISSUER_ID", "\"${localConfig("WALLET_ISSUER_ID")}\"")
         // Suffixe de la classe de billet créée dans la console Wallet
-        buildConfigField("String", "WALLET_CLASS_SUFFIX", "\"${walletConfig("WALLET_CLASS_SUFFIX").ifEmpty { "cinepass_event_class" }}\"")
+        buildConfigField("String", "WALLET_CLASS_SUFFIX", "\"${localConfig("WALLET_CLASS_SUFFIX").ifEmpty { "cinepass_event_class" }}\"")
         // Nom affiché de l'émetteur sur le pass
-        buildConfigField("String", "WALLET_ISSUER_NAME", "\"${walletConfig("WALLET_ISSUER_NAME").ifEmpty { "CinePass" }}\"")
+        buildConfigField("String", "WALLET_ISSUER_NAME", "\"${localConfig("WALLET_ISSUER_NAME").ifEmpty { "CinePass" }}\"")
         // Endpoint backend qui renvoie le JWT signé (mode recommandé en production)
-        buildConfigField("String", "WALLET_JWT_ENDPOINT", "\"${walletConfig("WALLET_JWT_ENDPOINT")}\"")
+        buildConfigField("String", "WALLET_JWT_ENDPOINT", "\"${localConfig("WALLET_JWT_ENDPOINT")}\"")
+
+        // Clé d'API TMDB pour la recherche de films (facultative)
+        buildConfigField("String", "TMDB_API_KEY", "\"${localConfig("TMDB_API_KEY")}\"")
     }
 
     buildTypes {
         debug {
             // Signature locale du JWT : uniquement pour le développement.
             // La clé privée du compte de service ne doit JAMAIS être livrée en production.
-            buildConfigField("String", "WALLET_SA_EMAIL", "\"${walletConfig("WALLET_SA_EMAIL")}\"")
+            buildConfigField("String", "WALLET_SA_EMAIL", "\"${localConfig("WALLET_SA_EMAIL")}\"")
             buildConfigField(
                 "String",
                 "WALLET_SA_PRIVATE_KEY",
-                "\"${walletConfig("WALLET_SA_PRIVATE_KEY").replace("\n", "\\n")}\"",
+                "\"${localConfig("WALLET_SA_PRIVATE_KEY").replace("\n", "\\n")}\"",
             )
         }
         release {

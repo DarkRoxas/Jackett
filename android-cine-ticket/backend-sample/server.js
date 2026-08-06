@@ -48,7 +48,8 @@ function buildPayload(ticket) {
     id: classId,
     issuerName: ISSUER_NAME,
     reviewStatus: 'UNDER_REVIEW',
-    eventName: localized(ticket.movieTitle),
+    // displayTitle porte l'année quand l'app la connaît : « Dune (2021) ».
+    eventName: localized(ticket.displayTitle || ticket.movieTitle),
     venue: { name: localized(ticket.cinemaName), address: localized(ticket.cinemaName) },
     dateTime: { start },
     hexBackgroundColor: '#1b1033',

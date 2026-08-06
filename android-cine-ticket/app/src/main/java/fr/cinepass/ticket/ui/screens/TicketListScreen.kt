@@ -144,7 +144,7 @@ private fun TicketCard(ticket: Ticket, onClick: () -> Unit) {
             Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = ticket.movieTitle,
+                    text = ticket.displayTitle,
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

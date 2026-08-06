@@ -61,6 +61,9 @@ class WalletRepository(
         val body = JSONObject().apply {
             put("ticketId", ticket.id)
             put("movieTitle", ticket.movieTitle)
+            put("releaseYear", ticket.releaseYear ?: JSONObject.NULL)
+            // Titre avec l'année : le backend l'utilise tel quel comme eventName.
+            put("displayTitle", ticket.displayTitle)
             put("cinemaName", ticket.cinemaName)
             put("screeningAt", ticket.screeningAt)
             put("room", ticket.room.orEmpty())

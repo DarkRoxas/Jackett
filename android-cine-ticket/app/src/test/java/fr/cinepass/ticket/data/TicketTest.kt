@@ -1,5 +1,6 @@
 package fr.cinepass.ticket.data
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -36,6 +37,18 @@ class TicketTest {
     @Test
     fun `manual archiving wins over the screening date`() {
         assertFalse(ticket(now + TimeUnit.DAYS.toMillis(3), archived = true).isUpcoming(now))
+    }
+
+    @Test
+    fun `the display title carries the release year when known`() {
+        val ticket = ticket(now).copy(movieTitle = "Dune", releaseYear = 2021)
+
+        assertEquals("Dune (2021)", ticket.displayTitle)
+    }
+
+    @Test
+    fun `the display title falls back to the bare title`() {
+        assertEquals("Film", ticket(now).displayTitle)
     }
 
     @Test

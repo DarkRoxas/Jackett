@@ -11,6 +11,8 @@
     <string name="empty_archive">Aucun billet archivé pour l\'instant.</string>
 
     <string name="field_movie">Titre du film</string>
+    <string name="field_release_year">Année</string>
+    <string name="release_year_hint">Distingue deux films portant le même titre (remake, réédition).</string>
     <string name="field_cinema">Cinéma</string>
     <string name="field_room">Salle</string>
     <string name="field_seats">Sièges</string>
@@ -27,9 +29,16 @@
     <string name="action_delete">Supprimer</string>
     <string name="action_archive">Archiver</string>
     <string name="action_unarchive">Désarchiver</string>
+    <string name="action_search_movie">Rechercher le film</string>
+    <string name="poster_downloading">Téléchargement de l\'affiche…</string>
     <string name="action_pick_poster">Choisir une affiche</string>
     <string name="action_remove_poster">Retirer l\'affiche</string>
     <string name="action_add_to_wallet">Ajouter à Google Wallet</string>
+
+    <string name="tap_to_enlarge">Appuyez pour agrandir</string>
+    <string name="poster_fullscreen">Affiche en plein écran</string>
+    <string name="barcode_fullscreen">Code-barres en plein écran</string>
+    <string name="tap_to_close">Appuyez pour revenir</string>
 
     <string name="brightness_boost">Luminosité maximale</string>
     <string name="brightness_hint">L\'écran passe automatiquement en luminosité maximale pour faciliter la lecture du code par le scanner.</string>

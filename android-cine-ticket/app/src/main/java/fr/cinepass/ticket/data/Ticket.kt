@@ -17,6 +17,8 @@ import java.util.UUID
 data class Ticket(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val movieTitle: String,
+    /** Année de sortie : distingue deux films homonymes (remakes, rééditions). */
+    val releaseYear: Int? = null,
     val cinemaName: String,
     /** Date et heure de la séance, en millisecondes epoch. */
     val screeningAt: Long,
@@ -37,6 +39,10 @@ data class Ticket(
 ) {
     val screeningDateTime: LocalDateTime
         get() = Instant.ofEpochMilli(screeningAt).atZone(ZoneId.systemDefault()).toLocalDateTime()
+
+    /** Titre tel qu'affiché partout : « Dune (2021) ». */
+    val displayTitle: String
+        get() = releaseYear?.let { "$movieTitle ($it)" } ?: movieTitle
 
     /** Un billet reste « à venir » jusqu'à 4 h après le début de la séance. */
     fun isUpcoming(now: Long = System.currentTimeMillis()): Boolean =

@@ -97,6 +97,16 @@ class WalletPassBuilderTest {
     }
 
     @Test
+    fun `the release year reaches the pass title`() {
+        val payload = WalletPassBuilder.buildPayload(config, ticket().copy(releaseYear = 2024))
+
+        assertEquals(
+            "Dune : Deuxième partie (2024)",
+            firstClass(payload).getJSONObject("eventName").getJSONObject("defaultValue").getString("value"),
+        )
+    }
+
+    @Test
     fun `seat and room are exposed to the pass`() {
         val seatInfo = firstObject(WalletPassBuilder.buildPayload(config, ticket())).getJSONObject("seatInfo")
 
