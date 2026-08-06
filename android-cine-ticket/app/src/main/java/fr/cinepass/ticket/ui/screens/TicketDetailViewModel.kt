@@ -92,8 +92,8 @@ class TicketDetailViewModel(
                 WalletPreparation.NotConfigured -> {
                     _walletBusy.value = false
                     _message.value = UiMessage(
-                        "Google Wallet n'est pas configuré : renseignez WALLET_ISSUER_ID et la " +
-                            "source du JWT dans local.properties.",
+                        "Google Wallet n'est pas configuré : renseignez l'identifiant émetteur " +
+                            "et le service de signature dans les réglages.",
                     )
                 }
 

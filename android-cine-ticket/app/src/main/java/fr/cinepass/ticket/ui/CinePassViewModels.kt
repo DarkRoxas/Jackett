@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import fr.cinepass.ticket.AppContainer
 import fr.cinepass.ticket.CinePassApplication
+import fr.cinepass.ticket.ui.screens.SettingsViewModel
 import fr.cinepass.ticket.ui.screens.TicketDetailViewModel
 import fr.cinepass.ticket.ui.screens.TicketEditViewModel
 import fr.cinepass.ticket.ui.screens.TicketListViewModel
@@ -18,6 +19,10 @@ object CinePassViewModelFactories {
 
     val list = viewModelFactory {
         initializer { TicketListViewModel(this.container.ticketRepository) }
+    }
+
+    val settings = viewModelFactory {
+        initializer { SettingsViewModel(this.container.settingsRepository) }
     }
 
     fun detail(ticketId: String) = viewModelFactory {

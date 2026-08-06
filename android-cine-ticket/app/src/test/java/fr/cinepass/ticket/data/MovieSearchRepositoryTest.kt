@@ -1,5 +1,6 @@
 package fr.cinepass.ticket.data
 
+import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -9,7 +10,7 @@ import org.junit.Test
 
 class MovieSearchRepositoryTest {
 
-    private val repository = MovieSearchRepository(apiKey = "cle-de-test")
+    private val repository = MovieSearchRepository { "cle-de-test" }
 
     private fun payload(vararg movies: String) =
         JSONObject("""{"page":1,"results":[${movies.joinToString(",")}]}""")
@@ -37,9 +38,9 @@ class MovieSearchRepositoryTest {
     """.trimIndent()
 
     @Test
-    fun `search is disabled without an api key`() {
-        assertFalse(MovieSearchRepository(apiKey = "").isConfigured)
-        assertTrue(repository.isConfigured)
+    fun `search is disabled without an api key`() = runBlocking {
+        assertFalse(MovieSearchRepository { "" }.isConfigured())
+        assertTrue(repository.isConfigured())
     }
 
     @Test

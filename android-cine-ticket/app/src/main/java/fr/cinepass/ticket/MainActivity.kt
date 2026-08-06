@@ -10,7 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.google.android.gms.pay.PayClient
-import fr.cinepass.ticket.ui.CinePassNavHost
+import fr.cinepass.ticket.ui.CinePassApp
 import fr.cinepass.ticket.ui.theme.CinePassTheme
 import fr.cinepass.ticket.wallet.WalletRepository
 import fr.cinepass.ticket.wallet.WalletResultBus
@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
-        val walletRepository = appContainer.walletRepository
+        val container = appContainer
 
         setContent {
             CinePassTheme {
@@ -30,7 +30,10 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    CinePassNavHost(walletRepository = walletRepository)
+                    CinePassApp(
+                        settingsRepository = container.settingsRepository,
+                        walletRepository = container.walletRepository,
+                    )
                 }
             }
         }

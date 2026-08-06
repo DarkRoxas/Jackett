@@ -103,8 +103,9 @@ fun MovieSearchDialog(
 
                 when {
                     !state.available -> Hint(
-                        "La recherche de films demande une clé TMDB.\n" +
-                            "Renseignez TMDB_API_KEY dans local.properties, ou saisissez le titre à la main.",
+                        "La recherche de films demande une clé TMDB.\n\n" +
+                            "Renseignez-la dans les réglages de l'application (icône engrenage " +
+                            "sur la liste des billets), ou saisissez le titre à la main.",
                     )
 
                     state.error != null -> Hint(state.error)

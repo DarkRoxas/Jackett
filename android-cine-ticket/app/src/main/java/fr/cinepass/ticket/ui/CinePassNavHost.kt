@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import fr.cinepass.ticket.ui.screens.FullScreenViewerScreen
+import fr.cinepass.ticket.ui.screens.SettingsScreen
 import fr.cinepass.ticket.ui.screens.TicketDetailScreen
 import fr.cinepass.ticket.ui.screens.TicketEditScreen
 import fr.cinepass.ticket.ui.screens.TicketListScreen
@@ -21,6 +22,7 @@ private object Routes {
     // concurrence avec la route de détail lors du matching.
     const val EDIT = "ticket-form?ticketId={ticketId}"
     const val VIEWER = "ticket-viewer/{ticketId}/{mode}"
+    const val SETTINGS = "settings"
 
     fun detail(ticketId: String) = "tickets/$ticketId"
     fun edit(ticketId: String? = null) = "ticket-form?ticketId=${ticketId.orEmpty()}"
@@ -36,7 +38,12 @@ fun CinePassNavHost(walletRepository: WalletRepository) {
             TicketListScreen(
                 onOpenTicket = { navController.navigate(Routes.detail(it)) },
                 onAddTicket = { navController.navigate(Routes.edit()) },
+                onOpenSettings = { navController.navigate(Routes.SETTINGS) },
             )
+        }
+
+        composable(Routes.SETTINGS) {
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
 
         composable(

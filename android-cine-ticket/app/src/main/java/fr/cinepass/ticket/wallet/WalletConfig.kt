@@ -1,6 +1,7 @@
 package fr.cinepass.ticket.wallet
 
 import fr.cinepass.ticket.BuildConfig
+import fr.cinepass.ticket.data.AppSettings
 
 /**
  * Paramètres de l'intégration Google Wallet.
@@ -10,11 +11,11 @@ import fr.cinepass.ticket.BuildConfig
  * 1. [jwtEndpoint] — **mode recommandé** : un backend détient la clé du compte de
  *    service et renvoie le JWT signé. Rien de secret ne se retrouve dans l'APK.
  * 2. [serviceAccountEmail] + [serviceAccountPrivateKey] — signature sur l'appareil,
- *    **uniquement pour le développement** (build debug). Une clé privée embarquée
- *    dans un APK est extractible : ne jamais publier une release ainsi configurée.
+ *    **réservée au dépannage** : une clé privée posée sur un téléphone est
+ *    récupérable dès que l'appareil est compromis.
  *
- * Les valeurs proviennent de `local.properties` (non versionné) ou de variables
- * d'environnement, via `buildConfigField` — voir `app/build.gradle.kts`.
+ * Les valeurs viennent des réglages de l'application ; celles laissées vides
+ * retombent sur `local.properties` via `BuildConfig`.
  */
 data class WalletConfig(
     val issuerId: String,
@@ -32,19 +33,29 @@ data class WalletConfig(
             serviceAccountPrivateKey.isNotBlank()
 
     val canUseBackend: Boolean
-        get() = jwtEndpoint.isNotBlank()
+        get() = issuerId.isNotBlank() && jwtEndpoint.isNotBlank()
 
     val isConfigured: Boolean
         get() = canUseBackend || canSignLocally
 
     companion object {
-        fun fromBuildConfig(): WalletConfig = WalletConfig(
-            issuerId = BuildConfig.WALLET_ISSUER_ID,
-            classSuffix = BuildConfig.WALLET_CLASS_SUFFIX,
-            issuerName = BuildConfig.WALLET_ISSUER_NAME,
-            jwtEndpoint = BuildConfig.WALLET_JWT_ENDPOINT,
-            serviceAccountEmail = BuildConfig.WALLET_SA_EMAIL,
-            serviceAccountPrivateKey = BuildConfig.WALLET_SA_PRIVATE_KEY,
+        const val DEFAULT_CLASS_SUFFIX = "cinepass_event_class"
+        const val DEFAULT_ISSUER_NAME = "CinePass"
+
+        /** Réglages de l'app, complétés par les valeurs de compilation. */
+        fun from(settings: AppSettings): WalletConfig = WalletConfig(
+            issuerId = settings.walletIssuerId.ifBlank { BuildConfig.WALLET_ISSUER_ID },
+            classSuffix = settings.walletClassSuffix
+                .ifBlank { BuildConfig.WALLET_CLASS_SUFFIX }
+                .ifBlank { DEFAULT_CLASS_SUFFIX },
+            issuerName = settings.walletIssuerName
+                .ifBlank { BuildConfig.WALLET_ISSUER_NAME }
+                .ifBlank { DEFAULT_ISSUER_NAME },
+            jwtEndpoint = settings.walletJwtEndpoint.ifBlank { BuildConfig.WALLET_JWT_ENDPOINT },
+            serviceAccountEmail = settings.walletServiceAccountEmail
+                .ifBlank { BuildConfig.WALLET_SA_EMAIL },
+            serviceAccountPrivateKey = settings.walletServiceAccountKey
+                .ifBlank { BuildConfig.WALLET_SA_PRIVATE_KEY },
         )
     }
 }

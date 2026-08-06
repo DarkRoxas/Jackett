@@ -19,12 +19,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocalActivity
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -58,13 +60,23 @@ import fr.cinepass.ticket.util.formatDateTime
 fun TicketListScreen(
     onOpenTicket: (String) -> Unit,
     onAddTicket: () -> Unit,
+    onOpenSettings: () -> Unit,
     viewModel: TicketListViewModel = viewModel(factory = CinePassViewModelFactories.list),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.tickets_title)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.tickets_title)) },
+                actions = {
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Réglages")
+                    }
+                },
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddTicket) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_ticket))

@@ -11,4 +11,7 @@
 /app/release
 *.jks
 *.keystore
+# Exception : clé de debug partagée, pour que tous les APK (poste et CI)
+# s'installent les uns par-dessus les autres. Elle ne signe rien de publiable.
+!keystore/debug.keystore
 wallet-service-account.json

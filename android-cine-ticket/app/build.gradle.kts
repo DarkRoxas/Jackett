@@ -43,8 +43,22 @@ android {
         buildConfigField("String", "TMDB_API_KEY", "\"${localConfig("TMDB_API_KEY")}\"")
     }
 
+    signingConfigs {
+        // Clé de debug versionnée : sans elle, chaque machine (et chaque run de
+        // CI) génère la sienne, et Android refuse d'installer le nouvel APK
+        // par-dessus l'ancien pour cause de signature différente.
+        getByName("debug") {
+            storeFile = rootProject.file("keystore/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         debug {
+            signingConfig = signingConfigs.getByName("debug")
+
             // Signature locale du JWT : uniquement pour le développement.
             // La clé privée du compte de service ne doit JAMAIS être livrée en production.
             buildConfigField("String", "WALLET_SA_EMAIL", "\"${localConfig("WALLET_SA_EMAIL")}\"")
@@ -112,6 +126,7 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.coil.compose)
     implementation(libs.zxing.core)
     implementation(libs.play.services.pay)

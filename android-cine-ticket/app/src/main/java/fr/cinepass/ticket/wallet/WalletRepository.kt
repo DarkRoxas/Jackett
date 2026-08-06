@@ -23,7 +23,8 @@ sealed interface WalletPreparation {
 
 class WalletRepository(
     context: Context,
-    val config: WalletConfig,
+    /** Relu à chaque tentative : les réglages peuvent changer en cours de session. */
+    private val configProvider: suspend () -> WalletConfig,
 ) {
     private val payClient: PayClient = Pay.getClient(context.applicationContext)
 
@@ -35,6 +36,7 @@ class WalletRepository(
 
     /** Produit le JWT à passer à `PayClient.savePassesJwt`. */
     suspend fun prepare(ticket: Ticket): WalletPreparation {
+        val config = configProvider()
         if (!config.isConfigured) return WalletPreparation.NotConfigured
 
         val available = runCatching { isWalletAvailable() }.getOrDefault(false)
@@ -42,22 +44,30 @@ class WalletRepository(
 
         val objectId = WalletPassBuilder.objectIdFor(config, ticket)
         return runCatching {
-            val jwt = if (config.canUseBackend) requestJwtFromBackend(ticket) else signLocally(ticket)
+            val jwt = if (config.canUseBackend) {
+                requestJwtFromBackend(config, ticket)
+            } else {
+                signLocally(config, ticket)
+            }
             WalletPreparation.Ready(jwt, objectId)
         }.getOrElse { error ->
             WalletPreparation.Failure(error.message ?: error::class.java.simpleName)
         }
     }
 
-    private suspend fun signLocally(ticket: Ticket): String = withContext(Dispatchers.Default) {
-        WalletJwt.sign(config, WalletPassBuilder.buildPayload(config, ticket))
-    }
+    private suspend fun signLocally(config: WalletConfig, ticket: Ticket): String =
+        withContext(Dispatchers.Default) {
+            WalletJwt.sign(config, WalletPassBuilder.buildPayload(config, ticket))
+        }
 
     /**
      * Demande le JWT signé au backend. Le corps envoyé décrit le billet ;
      * la réponse attendue est `{"jwt": "..."}` (ou le JWT en texte brut).
      */
-    private suspend fun requestJwtFromBackend(ticket: Ticket): String = withContext(Dispatchers.IO) {
+    private suspend fun requestJwtFromBackend(
+        config: WalletConfig,
+        ticket: Ticket,
+    ): String = withContext(Dispatchers.IO) {
         val body = JSONObject().apply {
             put("ticketId", ticket.id)
             put("movieTitle", ticket.movieTitle)

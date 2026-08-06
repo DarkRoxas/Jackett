@@ -10,16 +10,17 @@ import java.net.URLEncoder
 /**
  * Recherche de films dans la base [TMDB](https://www.themoviedb.org).
  *
- * La clé d'API vient de `local.properties` (`TMDB_API_KEY`) et transite par
- * `BuildConfig` ; sans clé, la recherche est simplement désactivée et la saisie
- * manuelle reste disponible.
+ * La clé d'API est saisie dans les réglages de l'application (à défaut, elle
+ * vient de `local.properties` via `BuildConfig`). Sans clé, la recherche est
+ * simplement désactivée et la saisie manuelle reste disponible.
  */
-class MovieSearchRepository(private val apiKey: String) {
+class MovieSearchRepository(private val apiKeyProvider: suspend () -> String) {
 
-    val isConfigured: Boolean get() = apiKey.isNotBlank()
+    suspend fun isConfigured(): Boolean = apiKeyProvider().isNotBlank()
 
     suspend fun search(query: String, language: String = "fr-FR"): List<MovieSearchResult> {
-        if (!isConfigured) error("Aucune clé TMDB configurée.")
+        val apiKey = apiKeyProvider()
+        if (apiKey.isBlank()) error("Aucune clé TMDB configurée.")
         if (query.isBlank()) return emptyList()
 
         val url = buildString {

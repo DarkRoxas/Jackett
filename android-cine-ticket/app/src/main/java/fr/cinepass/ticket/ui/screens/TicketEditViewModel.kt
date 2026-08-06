@@ -60,7 +60,7 @@ class TicketEditViewModel(
     private val _state = MutableStateFlow(TicketFormState(isNew = ticketId == null))
     val state: StateFlow<TicketFormState> = _state.asStateFlow()
 
-    private val _search = MutableStateFlow(MovieSearchState(available = movieSearchRepository.isConfigured))
+    private val _search = MutableStateFlow(MovieSearchState())
     val search: StateFlow<MovieSearchState> = _search.asStateFlow()
 
     /** Billet existant en cours d'édition, conservé pour préserver les champs non exposés. */
@@ -117,15 +117,17 @@ class TicketEditViewModel(
     // --- Recherche TMDB ---
 
     fun openMovieSearch() {
-        _search.update {
-            it.copy(
-                visible = true,
-                query = _state.value.movieTitle,
-                available = movieSearchRepository.isConfigured,
-                error = null,
-            )
+        _search.update { it.copy(visible = true, query = _state.value.movieTitle, error = null) }
+
+        viewModelScope.launch {
+            // La clé peut avoir été saisie dans les réglages depuis l'ouverture
+            // du formulaire : on la revérifie à chaque ouverture.
+            val available = movieSearchRepository.isConfigured()
+            _search.update { it.copy(available = available) }
+
+            val query = _search.value.query
+            if (available && query.isNotBlank()) onSearchQueryChange(query)
         }
-        if (_search.value.query.isNotBlank()) onSearchQueryChange(_search.value.query)
     }
 
     fun closeMovieSearch() {
@@ -141,9 +143,12 @@ class TicketEditViewModel(
             _search.update { it.copy(results = emptyList(), searching = false) }
             return
         }
-        if (!movieSearchRepository.isConfigured) return
 
         searchJob = viewModelScope.launch {
+            if (!movieSearchRepository.isConfigured()) {
+                _search.update { it.copy(available = false, searching = false) }
+                return@launch
+            }
             // Anti-rebond : on laisse la frappe se terminer avant d'appeler TMDB.
             delay(350)
             _search.update { it.copy(searching = true) }

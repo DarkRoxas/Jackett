@@ -12,6 +12,7 @@ enregistre comme billets électroniques dans **Google Wallet (Google Pay)**.
 | | |
 |---|---|
 | **Archivage local** | Base Room chiffrée par le stockage privé de l'app : film, année, cinéma, date/heure, salle, sièges, référence, notes, affiche. |
+| **Configuration dans l'app** | Écran de bienvenue au premier lancement puis écran de réglages : clé TMDB et paramètres Google Wallet se saisissent sur l'appareil, sans recompiler. |
 | **Recherche de films** | Recherche TMDB depuis le formulaire : le titre, l'année et l'affiche sélectionnés remplissent la fiche, et l'affiche est téléchargée en local pour rester consultable hors ligne. |
 | **Année de sortie** | Affichée partout sous la forme « Dune (2021) », y compris dans le pass Wallet : deux films homonymes restent distinguables. |
 | **Onglets À venir / Archives** | Un billet bascule automatiquement dans les archives 4 h après le début de la séance ; l'archivage manuel reste possible. |
@@ -38,19 +39,27 @@ Le workflow `.github/workflows/android-cine-ticket.yml` exécute ces deux comman
 à chaque push touchant ce dossier et publie l'APK debug en artefact — pratique
 pour récupérer un build sans installer le SDK.
 
-## Configuration de la recherche de films
+## Configuration depuis l'application
 
-Créez une clé d'API v3 sur <https://www.themoviedb.org/settings/api> (gratuite),
-puis dans `local.properties` :
+Au premier lancement, un écran de bienvenue propose de renseigner les deux
+intégrations facultatives ; on peut aussi passer et le faire plus tard via
+l'icône engrenage de la liste des billets. Les valeurs sont conservées sur
+l'appareil (DataStore, stockage privé de l'app) et relues à chaque utilisation :
+aucune recompilation n'est nécessaire.
 
-```properties
-TMDB_API_KEY=votre_cle
-```
+| Réglage | À quoi il sert | Où le trouver |
+|---|---|---|
+| Clé d'API TMDB | Recherche de films (titre, année, affiche) | <https://www.themoviedb.org/settings/api>, clé v3, gratuite |
+| Identifiant émetteur | Rattache le pass à votre compte Google Wallet | <https://pay.google.com/business/console> |
+| Adresse du service de signature | Signe le pass côté serveur | votre backend, voir [`backend-sample/`](backend-sample/) |
+| Compte de service + clé privée | Signature sur l'appareil, pour dépanner | clé JSON du compte de service |
 
-Sans clé, le bouton de recherche explique ce qui manque et la saisie manuelle du
-titre et de l'année reste disponible.
+Tout champ laissé vide retombe sur la valeur de compilation issue de
+`local.properties` (voir plus bas), ce qui laisse le mode développement intact.
+Sans configuration du tout, l'app fonctionne : seuls la recherche et le bouton
+Wallet affichent un message expliquant ce qui manque.
 
-## Configuration Google Wallet
+## Configuration au build (développement)
 
 L'enregistrement d'un pass exige un **compte émetteur** Google Wallet
 (<https://pay.google.com/business/console>) et un JWT `savetowallet` signé par un
@@ -135,10 +144,21 @@ app/src/main/java/fr/cinepass/ticket/
 └── util/DateTimeFormat.kt      formats français, conversions UTC du DatePicker
 ```
 
+## Signature de debug
+
+`keystore/debug.keystore` est versionné et utilisé par la variante debug. Sans
+lui, chaque poste et chaque run de CI génèrent leur propre clé, et Android
+refuse d'installer un APK par-dessus le précédent (« signatures différentes »),
+ce qui oblige à désinstaller — et donc à perdre les billets enregistrés.
+
+C'est la clé de debug standard (`androiddebugkey` / `android`) : elle ne permet
+de publier nulle part et ne protège rien. Une release doit être signée avec une
+clé qui, elle, n'a rien à faire dans le dépôt.
+
 ## Notes
 
 - Aucune donnée ne sort de l'appareil, hormis l'appel au backend Wallet si vous
-  en configurez un.
+  en configurez un et la recherche TMDB si vous l'activez.
 - La permission `INTERNET` n'est utilisée que pour ce backend.
 - La classe Wallet est envoyée en ligne dans le JWT avec
   `reviewStatus: UNDER_REVIEW`, ce qui suffit aux tests. Pour une diffusion

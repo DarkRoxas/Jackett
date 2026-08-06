@@ -9,6 +9,7 @@ composeBom = "2024.10.01"
 navigationCompose = "2.8.3"
 room = "2.6.1"
 coil = "2.7.0"
+datastore = "1.1.1"
 zxing = "3.5.3"
 playServicesPay = "16.5.0"
 junit = "4.13.2"
@@ -34,6 +35,7 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 play-services-pay = { group = "com.google.android.gms", name = "play-services-pay", version.ref = "playServicesPay" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
