@@ -47,7 +47,6 @@ data class TicketFormState(
     val posterDownloading: Boolean = false,
     val movieError: String? = null,
     val cinemaError: String? = null,
-    val barcodeError: String? = null,
 )
 
 data class MovieSearchState(
@@ -140,7 +139,7 @@ class TicketEditViewModel(
     fun onRoomChange(value: String) = _state.update { it.copy(room = value) }
     fun onSeatsChange(value: String) = _state.update { it.copy(seats = value) }
     fun onReferenceChange(value: String) = _state.update { it.copy(bookingReference = value) }
-    fun onBarcodeChange(value: String) = _state.update { it.copy(barcodeValue = value, barcodeError = null) }
+    fun onBarcodeChange(value: String) = _state.update { it.copy(barcodeValue = value) }
     fun onFormatChange(value: TicketBarcodeFormat) = _state.update { it.copy(barcodeFormat = value) }
     fun onNotesChange(value: String) = _state.update { it.copy(notes = value) }
     fun onDateChange(value: LocalDate) = _state.update { it.copy(date = value) }
