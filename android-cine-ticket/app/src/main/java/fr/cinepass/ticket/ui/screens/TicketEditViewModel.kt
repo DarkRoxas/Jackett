@@ -3,6 +3,7 @@ package fr.cinepass.ticket.ui.screens
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import fr.cinepass.ticket.data.KnownCinemas
 import fr.cinepass.ticket.data.MovieSearchRepository
 import fr.cinepass.ticket.data.MovieSearchResult
 import fr.cinepass.ticket.data.Ticket
@@ -14,7 +15,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -33,6 +37,7 @@ data class TicketFormState(
     val barcodeValue: String = "",
     val barcodeFormat: TicketBarcodeFormat = TicketBarcodeFormat.QR_CODE,
     val posterUri: String? = null,
+    val tmdbId: Int? = null,
     val notes: String = "",
     val loading: Boolean = true,
     val isNew: Boolean = true,
@@ -51,6 +56,13 @@ data class MovieSearchState(
     val available: Boolean = false,
 )
 
+/** Galerie d'affiches d'un film, pour remplacer celle choisie d'office. */
+data class PosterChoiceState(
+    val visible: Boolean = false,
+    val loading: Boolean = false,
+    val posters: List<String> = emptyList(),
+)
+
 class TicketEditViewModel(
     private val ticketId: String?,
     private val repository: TicketRepository,
@@ -62,6 +74,14 @@ class TicketEditViewModel(
 
     private val _search = MutableStateFlow(MovieSearchState())
     val search: StateFlow<MovieSearchState> = _search.asStateFlow()
+
+    private val _posterChoice = MutableStateFlow(PosterChoiceState())
+    val posterChoice: StateFlow<PosterChoiceState> = _posterChoice.asStateFlow()
+
+    /** Cinémas connus d'avance, complétés par ceux déjà saisis. */
+    val cinemaSuggestions: StateFlow<List<String>> = repository.observeCinemaNames()
+        .map { KnownCinemas.suggestions(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), KnownCinemas.defaults)
 
     /** Billet existant en cours d'édition, conservé pour préserver les champs non exposés. */
     private var original: Ticket? = null
@@ -89,6 +109,7 @@ class TicketEditViewModel(
                     barcodeValue = existing.barcodeValue,
                     barcodeFormat = existing.barcodeFormat,
                     posterUri = existing.posterUri,
+                    tmdbId = existing.tmdbId,
                     notes = existing.notes.orEmpty(),
                     loading = false,
                     isNew = false,
@@ -175,18 +196,48 @@ class TicketEditViewModel(
             it.copy(
                 movieTitle = movie.title,
                 releaseYear = movie.releaseYear?.toString().orEmpty(),
+                tmdbId = movie.id,
                 movieError = null,
-                posterDownloading = movie.posterUrl != null,
+                posterDownloading = true,
             )
         }
 
-        val posterUrl = movie.posterUrl ?: return
         viewModelScope.launch {
-            val imported = repository.importPosterFromUrl(posterUrl)
-            _state.update {
-                if (imported == null) it.copy(posterDownloading = false)
-                else it.copy(posterUri = imported, posterDownloading = false)
-            }
+            // On ne se contente pas de l'affiche « primaire » de la recherche :
+            // la galerie complète permet de retenir l'affiche française la
+            // mieux notée, c'est-à-dire celle exploitée en salle.
+            val best = movieSearchRepository.bestPoster(movie.id, movie.posterUrl)
+            downloadPoster(best)
+        }
+    }
+
+    // --- Choix de l'affiche ---
+
+    fun openPosterChoice() {
+        val movieId = _state.value.tmdbId ?: return
+        _posterChoice.value = PosterChoiceState(visible = true, loading = true)
+
+        viewModelScope.launch {
+            val posters = movieSearchRepository.posters(movieId)
+            _posterChoice.update { it.copy(loading = false, posters = posters) }
+        }
+    }
+
+    fun closePosterChoice() {
+        _posterChoice.update { it.copy(visible = false) }
+    }
+
+    fun onPosterChosen(url: String) {
+        _posterChoice.update { it.copy(visible = false) }
+        _state.update { it.copy(posterDownloading = true) }
+        viewModelScope.launch { downloadPoster(url) }
+    }
+
+    private suspend fun downloadPoster(url: String?) {
+        val imported = url?.let { repository.importPosterFromUrl(it) }
+        _state.update {
+            if (imported == null) it.copy(posterDownloading = false)
+            else it.copy(posterUri = imported, posterDownloading = false)
         }
     }
 
@@ -205,19 +256,18 @@ class TicketEditViewModel(
 
     fun save(onSaved: (String) -> Unit) {
         val form = _state.value
+        // Le code-barres est facultatif : beaucoup de billets n'en ont pas, ou
+        // se contentent de la référence de réservation.
         val movieError = "Le titre du film est obligatoire.".takeIf { form.movieTitle.isBlank() }
         val cinemaError = "Le nom du cinéma est obligatoire.".takeIf { form.cinemaName.isBlank() }
-        val barcodeError = "Le contenu du code-barres est obligatoire.".takeIf { form.barcodeValue.isBlank() }
 
-        if (movieError != null || cinemaError != null || barcodeError != null) {
-            _state.update {
-                it.copy(movieError = movieError, cinemaError = cinemaError, barcodeError = barcodeError)
-            }
+        if (movieError != null || cinemaError != null) {
+            _state.update { it.copy(movieError = movieError, cinemaError = cinemaError) }
             return
         }
 
         val base = original
-        val ticket = (base ?: Ticket(movieTitle = "", cinemaName = "", screeningAt = 0, barcodeValue = "")).copy(
+        val ticket = (base ?: Ticket(movieTitle = "", cinemaName = "", screeningAt = 0)).copy(
             movieTitle = form.movieTitle.trim(),
             releaseYear = form.releaseYear.toIntOrNull(),
             cinemaName = form.cinemaName.trim(),
@@ -228,6 +278,7 @@ class TicketEditViewModel(
             barcodeValue = form.barcodeValue.trim(),
             barcodeFormat = form.barcodeFormat,
             posterUri = form.posterUri,
+            tmdbId = form.tmdbId,
             notes = form.notes.trim().ifBlank { null },
         )
 

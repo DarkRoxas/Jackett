@@ -24,7 +24,14 @@ internal val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
-@Database(entities = [Ticket::class], version = 2, exportSchema = true)
+/** Mémorise le film TMDB choisi, pour pouvoir rechoisir une affiche plus tard. */
+internal val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tickets ADD COLUMN tmdbId INTEGER")
+    }
+}
+
+@Database(entities = [Ticket::class], version = 3, exportSchema = true)
 @TypeConverters(BarcodeFormatConverter::class)
 abstract class CinePassDatabase : RoomDatabase() {
 
@@ -40,7 +47,7 @@ abstract class CinePassDatabase : RoomDatabase() {
                 CinePassDatabase::class.java,
                 "cinepass.db",
             )
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
                 .also { instance = it }
         }

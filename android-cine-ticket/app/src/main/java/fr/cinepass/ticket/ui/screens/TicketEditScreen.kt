@@ -83,6 +83,8 @@ fun TicketEditScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val searchState by viewModel.search.collectAsStateWithLifecycle()
+    val posterChoice by viewModel.posterChoice.collectAsStateWithLifecycle()
+    val cinemaSuggestions by viewModel.cinemaSuggestions.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
@@ -91,6 +93,12 @@ fun TicketEditScreen(
         onQueryChange = viewModel::onSearchQueryChange,
         onSelect = viewModel::onMovieSelected,
         onDismiss = viewModel::closeMovieSearch,
+    )
+
+    PosterChoiceDialog(
+        state = posterChoice,
+        onSelect = viewModel::onPosterChosen,
+        onDismiss = viewModel::closePosterChoice,
     )
 
     val posterPicker = rememberLauncherForActivityResult(
@@ -170,13 +178,12 @@ fun TicketEditScreen(
                 )
             }
 
-            OutlinedTextField(
+            CinemaField(
                 value = state.cinemaName,
+                suggestions = cinemaSuggestions,
                 onValueChange = viewModel::onCinemaChange,
-                label = { Text(stringResource(R.string.field_cinema)) },
-                singleLine = true,
                 isError = state.cinemaError != null,
-                supportingText = state.cinemaError?.let { error -> { Text(error) } },
+                errorMessage = state.cinemaError,
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -228,32 +235,31 @@ fun TicketEditScreen(
                 value = state.barcodeValue,
                 onValueChange = viewModel::onBarcodeChange,
                 label = { Text(stringResource(R.string.field_barcode_value)) },
-                isError = state.barcodeError != null,
-                supportingText = {
-                    Text(
-                        state.barcodeError
-                            ?: "Recopiez le code imprimé sur le billet ou reçu par e-mail.",
-                    )
-                },
+                supportingText = { Text(stringResource(R.string.barcode_optional_hint)) },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                     imeAction = ImeAction.Next,
                 ),
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            BarcodeFormatDropdown(
-                selected = state.barcodeFormat,
-                onSelected = viewModel::onFormatChange,
-            )
+            // Le format n'a de sens que s'il y a un code à dessiner.
+            if (state.barcodeValue.isNotBlank()) {
+                BarcodeFormatDropdown(
+                    selected = state.barcodeFormat,
+                    onSelected = viewModel::onFormatChange,
+                )
+            }
 
             PosterPicker(
                 posterUri = state.posterUri,
                 downloading = state.posterDownloading,
+                canChooseFromTmdb = state.tmdbId != null,
                 onPick = {
                     posterPicker.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                     )
                 },
+                onChooseFromTmdb = viewModel::openPosterChoice,
                 onClear = viewModel::onPosterCleared,
             )
 
@@ -368,7 +374,9 @@ private fun BarcodeFormatDropdown(
 private fun PosterPicker(
     posterUri: String?,
     downloading: Boolean,
+    canChooseFromTmdb: Boolean,
     onPick: () -> Unit,
+    onChooseFromTmdb: () -> Unit,
     onClear: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -401,9 +409,15 @@ private fun PosterPicker(
                 Spacer(Modifier.padding(horizontal = 4.dp))
                 Text(stringResource(R.string.action_pick_poster))
             }
-            if (posterUri != null) {
-                TextButton(onClick = onClear) { Text(stringResource(R.string.action_remove_poster)) }
+            if (canChooseFromTmdb) {
+                OutlinedButton(onClick = onChooseFromTmdb) {
+                    Text(stringResource(R.string.action_other_poster))
+                }
             }
+        }
+
+        if (posterUri != null) {
+            TextButton(onClick = onClear) { Text(stringResource(R.string.action_remove_poster)) }
         }
     }
 }

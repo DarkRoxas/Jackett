@@ -34,6 +34,67 @@ class MovieSearchRepository(private val apiKeyProvider: suspend () -> String) {
         return withContext(Dispatchers.IO) { parse(get(url)) }
     }
 
+    /**
+     * Toutes les affiches d'un film, la plus pertinente en tête.
+     *
+     * `search/movie` ne renvoie qu'une affiche « primaire » qui n'est pas
+     * forcément celle exploitée en salle. On interroge donc la galerie complète
+     * et on classe : français d'abord, puis note et nombre de votes — ce qui
+     * fait remonter l'affiche officielle plutôt qu'une variante ou un teaser.
+     */
+    suspend fun posters(movieId: Int): List<String> {
+        val apiKey = apiKeyProvider()
+        if (apiKey.isBlank()) return emptyList()
+
+        val url = "$API_BASE/movie/$movieId/images" +
+            "?api_key=$apiKey" +
+            "&include_image_language=fr,null,en"
+
+        return withContext(Dispatchers.IO) {
+            runCatching { parsePosters(get(url)) }.getOrDefault(emptyList())
+        }
+    }
+
+    /** Meilleure affiche disponible, ou [fallback] si la galerie est vide. */
+    suspend fun bestPoster(movieId: Int, fallback: String?): String? =
+        posters(movieId).firstOrNull() ?: fallback
+
+    internal fun parsePosters(payload: JSONObject): List<String> {
+        val posters = payload.optJSONArray("posters") ?: return emptyList()
+
+        data class Candidate(
+            val path: String,
+            val languageRank: Int,
+            val voteAverage: Double,
+            val voteCount: Int,
+        )
+
+        val candidates = (0 until posters.length()).mapNotNull { index ->
+            val item = posters.optJSONObject(index) ?: return@mapNotNull null
+            val path = item.optString("file_path").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+
+            Candidate(
+                path = path,
+                languageRank = when (item.optString("iso_639_1").takeIf { it.isNotBlank() && it != "null" }) {
+                    "fr" -> 3
+                    null -> 2 // affiche sans texte : utilisable partout
+                    "en" -> 1
+                    else -> 0
+                },
+                voteAverage = item.optDouble("vote_average", 0.0),
+                voteCount = item.optInt("vote_count"),
+            )
+        }
+
+        return candidates
+            .sortedWith(
+                compareByDescending<Candidate> { it.languageRank }
+                    .thenByDescending { it.voteAverage }
+                    .thenByDescending { it.voteCount },
+            )
+            .map { "$IMAGE_BASE/$POSTER_SIZE${it.path}" }
+    }
+
     private fun get(url: String): JSONObject {
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"

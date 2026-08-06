@@ -19,6 +19,8 @@ class TicketRepository(
 
     fun observeById(id: String): Flow<Ticket?> = dao.observeById(id)
 
+    fun observeCinemaNames(): Flow<List<String>> = dao.observeCinemaNames()
+
     suspend fun findById(id: String): Ticket? = dao.findById(id)
 
     suspend fun save(ticket: Ticket) = dao.upsert(ticket)

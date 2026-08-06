@@ -31,7 +31,9 @@
     <string name="action_unarchive">Désarchiver</string>
     <string name="action_search_movie">Rechercher le film</string>
     <string name="poster_downloading">Téléchargement de l\'affiche…</string>
-    <string name="action_pick_poster">Choisir une affiche</string>
+    <string name="action_pick_poster">Depuis la galerie</string>
+    <string name="action_other_poster">Autre affiche du film</string>
+    <string name="barcode_optional_hint">Facultatif : recopiez le code du billet si vous en avez un. Sans code, aucun bloc n\'est affiché.</string>
     <string name="action_remove_poster">Retirer l\'affiche</string>
     <string name="action_add_to_wallet">Ajouter à Google Wallet</string>
 

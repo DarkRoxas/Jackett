@@ -86,6 +86,62 @@ class MovieSearchRepositoryTest {
         assertEquals(1, repository.parse(payload(untitled, dune2021)).size)
     }
 
+    // --- Galerie d'affiches ---
+
+    private fun posters(vararg entries: String) =
+        JSONObject("""{"id":1,"posters":[${entries.joinToString(",")}]}""")
+
+    private fun poster(path: String, language: String?, vote: Double, count: Int) =
+        """{"file_path":"$path","iso_639_1":${language?.let { "\"$it\"" } ?: "null"},""" +
+            """"vote_average":$vote,"vote_count":$count}"""
+
+    @Test
+    fun `the french poster wins over an english one better rated`() {
+        val ranked = repository.parsePosters(
+            posters(
+                poster("/anglaise.jpg", "en", vote = 8.0, count = 90),
+                poster("/francaise.jpg", "fr", vote = 5.0, count = 3),
+            ),
+        )
+
+        assertEquals("https://image.tmdb.org/t/p/w780/francaise.jpg", ranked.first())
+    }
+
+    @Test
+    fun `among french posters the most voted comes first`() {
+        val ranked = repository.parsePosters(
+            posters(
+                poster("/variante.jpg", "fr", vote = 5.1, count = 2),
+                poster("/officielle.jpg", "fr", vote = 6.8, count = 12),
+                poster("/teaser.jpg", "fr", vote = 5.1, count = 1),
+            ),
+        )
+
+        assertEquals(
+            listOf("/officielle.jpg", "/variante.jpg", "/teaser.jpg")
+                .map { "https://image.tmdb.org/t/p/w780$it" },
+            ranked,
+        )
+    }
+
+    @Test
+    fun `a textless poster is preferred to an english one`() {
+        val ranked = repository.parsePosters(
+            posters(
+                poster("/anglaise.jpg", "en", vote = 9.0, count = 400),
+                poster("/sans-texte.jpg", null, vote = 1.0, count = 1),
+            ),
+        )
+
+        assertEquals("https://image.tmdb.org/t/p/w780/sans-texte.jpg", ranked.first())
+    }
+
+    @Test
+    fun `a movie without gallery yields no poster`() {
+        assertTrue(repository.parsePosters(JSONObject("""{"id":1}""")).isEmpty())
+        assertTrue(repository.parsePosters(posters()).isEmpty())
+    }
+
     @Test
     fun `an empty response yields no result`() {
         assertTrue(repository.parse(JSONObject("""{"page":1}""")).isEmpty())

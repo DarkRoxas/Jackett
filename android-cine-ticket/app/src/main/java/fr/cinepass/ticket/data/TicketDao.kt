@@ -18,6 +18,10 @@ interface TicketDao {
     @Query("SELECT * FROM tickets WHERE id = :id")
     suspend fun findById(id: String): Ticket?
 
+    /** Cinémas déjà saisis : ils viennent compléter la liste proposée. */
+    @Query("SELECT DISTINCT cinemaName FROM tickets WHERE cinemaName != '' ORDER BY cinemaName")
+    fun observeCinemaNames(): Flow<List<String>>
+
     @Upsert
     suspend fun upsert(ticket: Ticket)
 

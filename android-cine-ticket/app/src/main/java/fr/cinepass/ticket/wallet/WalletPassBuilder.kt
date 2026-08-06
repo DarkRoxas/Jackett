@@ -47,13 +47,17 @@ object WalletPassBuilder {
             put("id", objectIdFor(config, ticket))
             put("classId", config.classId)
             put("state", if (ticket.isUpcoming()) "ACTIVE" else "EXPIRED")
-            put("barcode", JSONObject().apply {
-                put("type", ticket.barcodeFormat.walletType)
-                put("value", ticket.barcodeValue)
-                ticket.bookingReference?.takeIf { it.isNotBlank() }?.let {
-                    put("alternateText", it)
-                }
-            })
+            // Le champ barcode est optionnel côté Wallet : un billet sans code
+            // reste un pass valide, il n'affiche simplement rien à scanner.
+            if (ticket.hasBarcode) {
+                put("barcode", JSONObject().apply {
+                    put("type", ticket.barcodeFormat.walletType)
+                    put("value", ticket.barcodeValue)
+                    ticket.bookingReference?.takeIf { it.isNotBlank() }?.let {
+                        put("alternateText", it)
+                    }
+                })
+            }
             ticket.notes?.takeIf { it.isNotBlank() }?.let {
                 put("ticketHolderName", it)
             }

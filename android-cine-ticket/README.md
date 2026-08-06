@@ -14,6 +14,9 @@ enregistre comme billets électroniques dans **Google Wallet (Google Pay)**.
 | **Archivage local** | Base Room chiffrée par le stockage privé de l'app : film, année, cinéma, date/heure, salle, sièges, référence, notes, affiche. |
 | **Configuration dans l'app** | Écran de bienvenue au premier lancement puis écran de réglages : clé TMDB et paramètres Google Wallet se saisissent sur l'appareil, sans recompiler. |
 | **Recherche de films** | Recherche TMDB depuis le formulaire : le titre, l'année et l'affiche sélectionnés remplissent la fiche, et l'affiche est téléchargée en local pour rester consultable hors ligne. |
+| **Choix de l'affiche** | L'affiche retenue est la française la mieux notée de la galerie TMDB — celle exploitée en salle. « Autre affiche du film » ouvre la galerie complète si ce n'est pas la bonne. |
+| **Cinémas proposés** | Liste déroulante alimentée par [`KnownCinemas`](app/src/main/java/fr/cinepass/ticket/data/KnownCinemas.kt) et par les salles déjà saisies ; le champ reste libre. |
+| **Code-barres facultatif** | Un billet sans code s'enregistre normalement : aucun bloc n'est alors affiché, ni sur la fiche ni dans le pass Wallet. |
 | **Année de sortie** | Affichée partout sous la forme « Dune (2021) », y compris dans le pass Wallet : deux films homonymes restent distinguables. |
 | **Onglets À venir / Archives** | Un billet bascule automatiquement dans les archives 4 h après le début de la séance ; l'archivage manuel reste possible. |
 | **Mise en page façon Wallet** | Informations de séance, code-barres compact, puis l'affiche entière — jamais rognée — sur toute la largeur. |

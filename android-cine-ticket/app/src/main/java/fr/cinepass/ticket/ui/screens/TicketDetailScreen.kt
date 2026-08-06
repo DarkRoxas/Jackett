@@ -163,6 +163,7 @@ fun TicketDetailScreen(
                 onBarcodeClick = { onOpenViewer(current.id, ViewerMode.BARCODE) },
             )
 
+            // Un appui sur l'affiche l'ouvre seule, en luminosité maximale.
             current.posterUri?.let { poster ->
                 AsyncImage(
                     model = poster,
@@ -271,11 +272,14 @@ private fun PassCard(ticket: Ticket, onBarcodeClick: () -> Unit) {
                 PassField("Référence", it, Modifier.fillMaxWidth())
             }
 
-            Spacer(Modifier.height(16.dp))
-            HorizontalDivider(color = PASS_SECONDARY.copy(alpha = 0.2f))
-            Spacer(Modifier.height(16.dp))
+            // Sans code à présenter, on n'affiche ni séparateur ni bloc vide.
+            if (ticket.hasBarcode) {
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider(color = PASS_SECONDARY.copy(alpha = 0.2f))
+                Spacer(Modifier.height(16.dp))
 
-            CompactBarcode(ticket = ticket, onClick = onBarcodeClick)
+                CompactBarcode(ticket = ticket, onClick = onBarcodeClick)
+            }
         }
     }
 }

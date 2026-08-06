@@ -115,6 +115,16 @@ class WalletPassBuilderTest {
     }
 
     @Test
+    fun `a ticket without barcode still produces a valid pass`() {
+        val payload = WalletPassBuilder.buildPayload(config, ticket().copy(barcodeValue = ""))
+        val obj = firstObject(payload)
+
+        assertFalse(obj.has("barcode"))
+        assertEquals("ACTIVE", obj.getString("state"))
+        assertEquals(1, payload.getJSONArray("eventTicketObjects").length())
+    }
+
+    @Test
     fun `blank optional fields are omitted rather than sent empty`() {
         val bare = ticket().copy(room = null, seats = "", bookingReference = null, notes = null)
         val obj = firstObject(WalletPassBuilder.buildPayload(config, bare))
