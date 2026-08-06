@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import fr.cinepass.ticket.data.KnownCinemas
+import fr.cinepass.ticket.data.MoviePoster
 import fr.cinepass.ticket.data.MovieSearchRepository
 import fr.cinepass.ticket.data.MovieSearchResult
 import fr.cinepass.ticket.data.Ticket
@@ -60,7 +61,7 @@ data class MovieSearchState(
 data class PosterChoiceState(
     val visible: Boolean = false,
     val loading: Boolean = false,
-    val posters: List<String> = emptyList(),
+    val posters: List<MoviePoster> = emptyList(),
 )
 
 class TicketEditViewModel(

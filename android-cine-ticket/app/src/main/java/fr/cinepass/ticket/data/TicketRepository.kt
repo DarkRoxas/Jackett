@@ -41,7 +41,14 @@ class TicketRepository(
      */
     suspend fun importPoster(source: Uri): String? = withContext(Dispatchers.IO) {
         val dir = File(context.filesDir, POSTER_DIR).apply { mkdirs() }
-        val target = File(dir, "${UUID.randomUUID()}.jpg")
+        // L'extension suit le type réel : une affiche animée reste un .gif.
+        val extension = when (context.contentResolver.getType(source)) {
+            "image/gif" -> "gif"
+            "image/webp" -> "webp"
+            "image/png" -> "png"
+            else -> "jpg"
+        }
+        val target = File(dir, "${UUID.randomUUID()}.$extension")
         runCatching {
             context.contentResolver.openInputStream(source)?.use { input ->
                 target.outputStream().use { output -> input.copyTo(output) }

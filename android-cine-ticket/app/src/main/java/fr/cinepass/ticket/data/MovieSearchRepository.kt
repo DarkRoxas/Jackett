@@ -42,7 +42,7 @@ class MovieSearchRepository(private val apiKeyProvider: suspend () -> String) {
      * et on classe : français d'abord, puis note et nombre de votes — ce qui
      * fait remonter l'affiche officielle plutôt qu'une variante ou un teaser.
      */
-    suspend fun posters(movieId: Int): List<String> {
+    suspend fun posters(movieId: Int): List<MoviePoster> {
         val apiKey = apiKeyProvider()
         if (apiKey.isBlank()) return emptyList()
 
@@ -57,42 +57,45 @@ class MovieSearchRepository(private val apiKeyProvider: suspend () -> String) {
 
     /** Meilleure affiche disponible, ou [fallback] si la galerie est vide. */
     suspend fun bestPoster(movieId: Int, fallback: String?): String? =
-        posters(movieId).firstOrNull() ?: fallback
+        posters(movieId).firstOrNull()?.url ?: fallback
 
-    internal fun parsePosters(payload: JSONObject): List<String> {
+    internal fun parsePosters(payload: JSONObject): List<MoviePoster> {
         val posters = payload.optJSONArray("posters") ?: return emptyList()
 
-        data class Candidate(
-            val path: String,
-            val languageRank: Int,
-            val voteAverage: Double,
-            val voteCount: Int,
-        )
-
-        val candidates = (0 until posters.length()).mapNotNull { index ->
+        val all = (0 until posters.length()).mapNotNull { index ->
             val item = posters.optJSONObject(index) ?: return@mapNotNull null
             val path = item.optString("file_path").takeIf { it.isNotBlank() } ?: return@mapNotNull null
 
-            Candidate(
-                path = path,
-                languageRank = when (item.optString("iso_639_1").takeIf { it.isNotBlank() && it != "null" }) {
-                    "fr" -> 3
-                    null -> 2 // affiche sans texte : utilisable partout
-                    "en" -> 1
-                    else -> 0
-                },
+            MoviePoster(
+                url = "$IMAGE_BASE/$FULL_SIZE$path",
+                thumbnailUrl = "$IMAGE_BASE/$GRID_SIZE$path",
+                width = item.optInt("width"),
+                height = item.optInt("height"),
+                language = item.optString("iso_639_1").takeIf { it.isNotBlank() && it != "null" },
                 voteAverage = item.optDouble("vote_average", 0.0),
                 voteCount = item.optInt("vote_count"),
             )
         }
 
-        return candidates
-            .sortedWith(
-                compareByDescending<Candidate> { it.languageRank }
-                    .thenByDescending { it.voteAverage }
-                    .thenByDescending { it.voteCount },
-            )
-            .map { "$IMAGE_BASE/$POSTER_SIZE${it.path}" }
+        // On ne propose que du haute définition… sauf si le film n'a rien
+        // d'autre, auquel cas mieux vaut une affiche moyenne que pas d'affiche.
+        val highDefinition = all.filter { it.width >= MoviePoster.MIN_WIDTH }
+        val retained = highDefinition.ifEmpty { all }
+
+        return retained.sortedWith(
+            compareByDescending<MoviePoster> { languageRank(it.language) }
+                .thenByDescending { it.voteAverage }
+                .thenByDescending { it.voteCount }
+                // À notes égales, la définition la plus élevée l'emporte.
+                .thenByDescending { it.width },
+        )
+    }
+
+    private fun languageRank(language: String?): Int = when (language) {
+        "fr" -> 3
+        null -> 2 // affiche sans texte : utilisable partout
+        "en" -> 1
+        else -> 0
     }
 
     private fun get(url: String): JSONObject {
@@ -144,6 +147,11 @@ class MovieSearchRepository(private val apiKeyProvider: suspend () -> String) {
         const val API_BASE = "https://api.themoviedb.org/3"
         const val IMAGE_BASE = "https://image.tmdb.org/t/p"
         const val POSTER_SIZE = "w780"
+
+        // L'affiche enregistrée sur le billet est affichée en plein écran :
+        // on prend la résolution d'origine plutôt qu'une version réduite.
+        const val FULL_SIZE = "original"
         const val THUMBNAIL_SIZE = "w185"
+        const val GRID_SIZE = "w342"
     }
 }

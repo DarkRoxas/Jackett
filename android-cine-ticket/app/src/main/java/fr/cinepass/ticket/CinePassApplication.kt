@@ -2,6 +2,11 @@ package fr.cinepass.ticket
 
 import android.app.Application
 import android.content.Context
+import android.os.Build
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
 import fr.cinepass.ticket.data.CinePassDatabase
 import fr.cinepass.ticket.data.MovieSearchRepository
 import fr.cinepass.ticket.data.SettingsRepository
@@ -26,7 +31,7 @@ class AppContainer(context: Context) {
     }
 }
 
-class CinePassApplication : Application() {
+class CinePassApplication : Application(), ImageLoaderFactory {
 
     lateinit var container: AppContainer
         private set
@@ -35,6 +40,21 @@ class CinePassApplication : Application() {
         super.onCreate()
         container = AppContainer(this)
     }
+
+    /**
+     * Chargeur d'images commun à l'app, doté des décodeurs animés : une affiche
+     * GIF ou WebP animée choisie dans la galerie s'anime au lieu de rester figée
+     * sur sa première image.
+     */
+    override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
+        .components {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                add(ImageDecoderDecoder.Factory())
+            } else {
+                add(GifDecoder.Factory())
+            }
+        }
+        .build()
 }
 
 val Context.appContainer: AppContainer

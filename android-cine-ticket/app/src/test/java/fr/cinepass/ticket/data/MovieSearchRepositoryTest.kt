@@ -91,9 +91,16 @@ class MovieSearchRepositoryTest {
     private fun posters(vararg entries: String) =
         JSONObject("""{"id":1,"posters":[${entries.joinToString(",")}]}""")
 
-    private fun poster(path: String, language: String?, vote: Double, count: Int) =
-        """{"file_path":"$path","iso_639_1":${language?.let { "\"$it\"" } ?: "null"},""" +
-            """"vote_average":$vote,"vote_count":$count}"""
+    private fun poster(
+        path: String,
+        language: String?,
+        vote: Double = 5.0,
+        count: Int = 10,
+        width: Int = 2000,
+    ) = """{"file_path":"$path","iso_639_1":${language?.let { "\"$it\"" } ?: "null"},""" +
+        """"vote_average":$vote,"vote_count":$count,"width":$width,"height":${width * 3 / 2}}"""
+
+    private val full = "https://image.tmdb.org/t/p/original"
 
     @Test
     fun `the french poster wins over an english one better rated`() {
@@ -104,7 +111,7 @@ class MovieSearchRepositoryTest {
             ),
         )
 
-        assertEquals("https://image.tmdb.org/t/p/w780/francaise.jpg", ranked.first())
+        assertEquals("$full/francaise.jpg", ranked.first().url)
     }
 
     @Test
@@ -118,9 +125,8 @@ class MovieSearchRepositoryTest {
         )
 
         assertEquals(
-            listOf("/officielle.jpg", "/variante.jpg", "/teaser.jpg")
-                .map { "https://image.tmdb.org/t/p/w780$it" },
-            ranked,
+            listOf("/officielle.jpg", "/variante.jpg", "/teaser.jpg").map { "$full$it" },
+            ranked.map { it.url },
         )
     }
 
@@ -133,7 +139,49 @@ class MovieSearchRepositoryTest {
             ),
         )
 
-        assertEquals("https://image.tmdb.org/t/p/w780/sans-texte.jpg", ranked.first())
+        assertEquals("$full/sans-texte.jpg", ranked.first().url)
+    }
+
+    @Test
+    fun `low resolution posters are left out of the gallery`() {
+        val ranked = repository.parsePosters(
+            posters(
+                poster("/petite.jpg", "fr", vote = 9.0, count = 500, width = 500),
+                poster("/grande.jpg", "fr", vote = 5.0, count = 2, width = 2000),
+            ),
+        )
+
+        assertEquals(listOf("$full/grande.jpg"), ranked.map { it.url })
+    }
+
+    @Test
+    fun `a movie with only small posters still gets one`() {
+        val ranked = repository.parsePosters(
+            posters(poster("/petite.jpg", "fr", width = 500)),
+        )
+
+        assertEquals(1, ranked.size)
+        assertEquals("500 \u00d7 750", ranked.first().resolutionLabel)
+    }
+
+    @Test
+    fun `at equal votes the sharpest poster comes first`() {
+        val ranked = repository.parsePosters(
+            posters(
+                poster("/hd.jpg", "fr", vote = 5.0, count = 3, width = 1200),
+                poster("/uhd.jpg", "fr", vote = 5.0, count = 3, width = 3000),
+            ),
+        )
+
+        assertEquals("$full/uhd.jpg", ranked.first().url)
+    }
+
+    @Test
+    fun `the grid uses a reduced thumbnail, not the full image`() {
+        val chosen = repository.parsePosters(posters(poster("/a.jpg", "fr"))).single()
+
+        assertEquals("https://image.tmdb.org/t/p/w342/a.jpg", chosen.thumbnailUrl)
+        assertEquals("$full/a.jpg", chosen.url)
     }
 
     @Test

@@ -128,6 +128,8 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.coil.compose)
+    // Décodeurs GIF / WebP animés : permet d'utiliser une affiche animée.
+    implementation(libs.coil.gif)
     implementation(libs.zxing.core)
     implementation(libs.play.services.pay)
 

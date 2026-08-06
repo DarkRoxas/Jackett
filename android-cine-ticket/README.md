@@ -15,6 +15,8 @@ enregistre comme billets électroniques dans **Google Wallet (Google Pay)**.
 | **Configuration dans l'app** | Écran de bienvenue au premier lancement puis écran de réglages : clé TMDB et paramètres Google Wallet se saisissent sur l'appareil, sans recompiler. |
 | **Recherche de films** | Recherche TMDB depuis le formulaire : le titre, l'année et l'affiche sélectionnés remplissent la fiche, et l'affiche est téléchargée en local pour rester consultable hors ligne. |
 | **Choix de l'affiche** | L'affiche retenue est la française la mieux notée de la galerie TMDB — celle exploitée en salle. « Autre affiche du film » ouvre la galerie complète si ce n'est pas la bonne. |
+| **Haute définition** | La sélection écarte tout ce qui fait moins de 1000 px de large, affiche la résolution sous chaque vignette et enregistre le fichier en résolution d'origine. |
+| **Affiches animées** | Un GIF ou WebP animé choisi dans la galerie s'anime sur la fiche et en plein écran (décodeurs Coil). TMDB ne diffusant que des images fixes, la source doit venir de vous. |
 | **Cinémas proposés** | Liste déroulante alimentée par [`KnownCinemas`](app/src/main/java/fr/cinepass/ticket/data/KnownCinemas.kt) et par les salles déjà saisies ; le champ reste libre. |
 | **Code-barres facultatif** | Un billet sans code s'enregistre normalement : aucun bloc n'est alors affiché, ni sur la fiche ni dans le pass Wallet. |
 | **Année de sortie** | Affichée partout sous la forme « Dune (2021) », y compris dans le pass Wallet : deux films homonymes restent distinguables. |
