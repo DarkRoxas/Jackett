@@ -1,0 +1,19 @@
+# Copiez ce fichier en local.properties (ignoré par git) et complétez-le.
+# Android Studio renseigne sdk.dir automatiquement à la première ouverture.
+
+sdk.dir=/chemin/vers/Android/sdk
+
+# --- Google Wallet (facultatif : sans ces valeurs, seul le bouton Wallet est inactif) ---
+
+# Identifiant émetteur : https://pay.google.com/business/console
+WALLET_ISSUER_ID=
+WALLET_ISSUER_NAME=CinePass
+WALLET_CLASS_SUFFIX=cinepass_event_class
+
+# Mode recommandé : un backend signe le JWT (voir backend-sample/).
+WALLET_JWT_ENDPOINT=
+
+# Mode développement uniquement : signature sur l'appareil.
+# Injecté dans le build debug seulement — une clé privée dans un APK est extractible.
+WALLET_SA_EMAIL=
+WALLET_SA_PRIVATE_KEY=

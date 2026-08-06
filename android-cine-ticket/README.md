@@ -26,8 +26,13 @@ enregistre comme billets électroniques dans **Google Wallet (Google Pay)**.
 
 ```bash
 cd android-cine-ticket
-./gradlew :app:assembleDebug
+./gradlew testDebugUnitTest   # tests JVM : pass Wallet, signature JWT, dates
+./gradlew :app:assembleDebug  # APK -> app/build/outputs/apk/debug/
 ```
+
+Le workflow `.github/workflows/android-cine-ticket.yml` exécute ces deux commandes
+à chaque push touchant ce dossier et publie l'APK debug en artefact — pratique
+pour récupérer un build sans installer le SDK.
 
 ## Configuration Google Wallet
 
@@ -37,7 +42,7 @@ compte de service RS256. Rien n'est nécessaire pour le reste de l'app : sans
 configuration, tout fonctionne sauf le bouton Wallet, qui affiche un message
 explicite.
 
-Créez `android-cine-ticket/local.properties` (déjà ignoré par git) :
+Copiez `local.properties.example` en `local.properties` (déjà ignoré par git) :
 
 ```properties
 sdk.dir=/chemin/vers/Android/sdk
@@ -70,6 +75,10 @@ L'app envoie en POST un JSON décrivant le billet :
 Le backend construit l'`EventTicketObject`, signe le JWT avec la clé du compte de
 service et répond `{"jwt": "..."}` (ou le JWT en texte brut). La clé privée ne
 quitte jamais le serveur.
+
+Une implémentation de référence prête à lancer se trouve dans
+[`backend-sample/`](backend-sample/) : ~150 lignes de Node, sans dépendance npm,
+produisant exactement la même charge utile que `WalletPassBuilder.kt`.
 
 ### 2. Signature sur l'appareil — développement uniquement
 
