@@ -16,7 +16,7 @@ enregistre comme billets électroniques dans **Google Wallet (Google Pay)**.
 | **Recherche de films** | Recherche TMDB depuis le formulaire : le titre, l'année et l'affiche sélectionnés remplissent la fiche, et l'affiche est téléchargée en local pour rester consultable hors ligne. |
 | **Choix de l'affiche** | L'affiche retenue est la française la mieux notée de la galerie TMDB — celle exploitée en salle. « Autre affiche du film » ouvre la galerie complète si ce n'est pas la bonne. |
 | **Haute définition** | La sélection écarte tout ce qui fait moins de 1000 px de large, affiche la résolution sous chaque vignette et enregistre le fichier en résolution d'origine. |
-| **Affiches animées** | Un GIF ou WebP animé choisi dans la galerie s'anime sur la fiche et en plein écran (décodeurs Coil). TMDB ne diffusant que des images fixes, la source doit venir de vous. |
+| **Affiches animées** | Onglet « Animées » dans le choix de l'affiche : recherche GIPHY, format vertical et grande taille en tête, aperçu léger dans la grille. L'animation retenue joue sur la fiche et en plein écran. |
 | **Cinémas proposés** | Liste déroulante alimentée par [`KnownCinemas`](app/src/main/java/fr/cinepass/ticket/data/KnownCinemas.kt) et par les salles déjà saisies ; le champ reste libre. |
 | **Code-barres facultatif** | Un billet sans code s'enregistre normalement : aucun bloc n'est alors affiché, ni sur la fiche ni dans le pass Wallet. |
 | **Année de sortie** | Affichée partout sous la forme « Dune (2021) », y compris dans le pass Wallet : deux films homonymes restent distinguables. |
@@ -55,6 +55,7 @@ aucune recompilation n'est nécessaire.
 | Réglage | À quoi il sert | Où le trouver |
 |---|---|---|
 | Clé d'API TMDB | Recherche de films (titre, année, affiche) | <https://www.themoviedb.org/settings/api>, clé v3, gratuite |
+| Clé d'API GIPHY | Onglet « Animées » du choix de l'affiche | <https://developers.giphy.com>, clé beta, gratuite |
 | Fichier JSON du compte de service | **Tout Google Wallet, en un seul import** | clé du compte de service, console Google Cloud |
 
 ### Google Wallet en un import

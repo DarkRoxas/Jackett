@@ -46,6 +46,7 @@ object CinePassViewModelFactories {
                 ticketId = ticketId,
                 repository = this.container.ticketRepository,
                 movieSearchRepository = this.container.movieSearchRepository,
+                animatedPosterRepository = this.container.animatedPosterRepository,
             )
         }
     }

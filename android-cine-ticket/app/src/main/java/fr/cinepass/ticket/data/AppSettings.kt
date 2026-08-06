@@ -10,6 +10,7 @@ package fr.cinepass.ticket.data
  */
 data class AppSettings(
     val tmdbApiKey: String = "",
+    val giphyApiKey: String = "",
     val walletIssuerId: String = "",
     val walletIssuerName: String = "",
     val walletClassSuffix: String = "",

@@ -7,6 +7,7 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
+import fr.cinepass.ticket.data.AnimatedPosterRepository
 import fr.cinepass.ticket.data.CinePassDatabase
 import fr.cinepass.ticket.data.MovieSearchRepository
 import fr.cinepass.ticket.data.SettingsRepository
@@ -29,6 +30,9 @@ class AppContainer(context: Context) {
     }
     val movieSearchRepository = MovieSearchRepository {
         settingsRepository.current().tmdbApiKey.ifBlank { BuildConfig.TMDB_API_KEY }
+    }
+    val animatedPosterRepository = AnimatedPosterRepository {
+        settingsRepository.current().giphyApiKey.ifBlank { BuildConfig.GIPHY_API_KEY }
     }
     val walletIssuerDiscovery = WalletIssuerDiscovery()
 }

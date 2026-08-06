@@ -75,6 +75,22 @@ fun SettingsForm(
             )
         }
 
+        SectionCard(
+            title = "Affiches animées",
+            description = "Aucune base de cinéma ne diffuse d'affiche animée par API. GIPHY est " +
+                "la seule source interrogeable : une clé gratuite ajoute un onglet « Animées » " +
+                "au choix de l'affiche. Le contenu y est communautaire, donc inégal.",
+        ) {
+            OutlinedTextField(
+                value = settings.giphyApiKey,
+                onValueChange = { value -> onChange { it.copy(giphyApiKey = value) } },
+                label = { Text("Clé d'API GIPHY") },
+                singleLine = true,
+                supportingText = { Text("developers.giphy.com → Create an App → clé beta") },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
         WalletSection(
             state = state,
             onChange = onChange,

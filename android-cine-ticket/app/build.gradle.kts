@@ -41,6 +41,8 @@ android {
 
         // Clé d'API TMDB pour la recherche de films (facultative)
         buildConfigField("String", "TMDB_API_KEY", "\"${localConfig("TMDB_API_KEY")}\"")
+        // Clé d'API GIPHY pour la recherche d'affiches animées (facultative)
+        buildConfigField("String", "GIPHY_API_KEY", "\"${localConfig("GIPHY_API_KEY")}\"")
     }
 
     signingConfigs {

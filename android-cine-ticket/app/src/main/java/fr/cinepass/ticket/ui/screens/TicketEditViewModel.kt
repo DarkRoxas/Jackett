@@ -3,6 +3,8 @@ package fr.cinepass.ticket.ui.screens
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import fr.cinepass.ticket.data.AnimatedPoster
+import fr.cinepass.ticket.data.AnimatedPosterRepository
 import fr.cinepass.ticket.data.KnownCinemas
 import fr.cinepass.ticket.data.MoviePoster
 import fr.cinepass.ticket.data.MovieSearchRepository
@@ -57,17 +59,28 @@ data class MovieSearchState(
     val available: Boolean = false,
 )
 
-/** Galerie d'affiches d'un film, pour remplacer celle choisie d'office. */
+/**
+ * Galerie d'affiches d'un film, pour remplacer celle choisie d'office : les
+ * affiches fixes de TMDB, et les animées cherchées sur GIPHY.
+ */
 data class PosterChoiceState(
     val visible: Boolean = false,
     val loading: Boolean = false,
     val posters: List<MoviePoster> = emptyList(),
+    val animatedAvailable: Boolean = false,
+    val animatedQuery: String = "",
+    val animatedLoading: Boolean = false,
+    val animated: List<AnimatedPoster> = emptyList(),
+    val animatedError: String? = null,
+    /** La première ouverture de l'onglet déclenche la recherche. */
+    val animatedSearched: Boolean = false,
 )
 
 class TicketEditViewModel(
     private val ticketId: String?,
     private val repository: TicketRepository,
     private val movieSearchRepository: MovieSearchRepository,
+    private val animatedPosterRepository: AnimatedPosterRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TicketFormState(isNew = ticketId == null))
@@ -89,6 +102,7 @@ class TicketEditViewModel(
 
     /** Recherche en cours : annulée à chaque frappe pour ne garder que la dernière. */
     private var searchJob: Job? = null
+    private var animatedJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -215,17 +229,69 @@ class TicketEditViewModel(
     // --- Choix de l'affiche ---
 
     fun openPosterChoice() {
-        val movieId = _state.value.tmdbId ?: return
-        _posterChoice.value = PosterChoiceState(visible = true, loading = true)
+        val form = _state.value
+        val movieId = form.tmdbId ?: return
+
+        _posterChoice.value = PosterChoiceState(
+            visible = true,
+            loading = true,
+            // Requête de départ : le titre du film, que l'on peut affiner.
+            animatedQuery = listOfNotNull(form.movieTitle.takeIf { it.isNotBlank() }, "poster")
+                .joinToString(" "),
+        )
 
         viewModelScope.launch {
             val posters = movieSearchRepository.posters(movieId)
-            _posterChoice.update { it.copy(loading = false, posters = posters) }
+            val animatedAvailable = animatedPosterRepository.isConfigured()
+            _posterChoice.update {
+                it.copy(loading = false, posters = posters, animatedAvailable = animatedAvailable)
+            }
         }
     }
 
     fun closePosterChoice() {
-        _posterChoice.update { it.copy(visible = false) }
+        animatedJob?.cancel()
+        _posterChoice.update { it.copy(visible = false, animatedLoading = false) }
+    }
+
+    // --- Affiches animées ---
+
+    /** Première ouverture de l'onglet : on lance la recherche par défaut. */
+    fun onAnimatedTabOpened() {
+        if (_posterChoice.value.animatedSearched) return
+        searchAnimated(_posterChoice.value.animatedQuery)
+    }
+
+    fun onAnimatedQueryChange(query: String) {
+        _posterChoice.update { it.copy(animatedQuery = query) }
+    }
+
+    fun searchAnimated(query: String) {
+        animatedJob?.cancel()
+        _posterChoice.update {
+            it.copy(
+                animatedQuery = query,
+                animatedLoading = true,
+                animatedError = null,
+                animatedSearched = true,
+            )
+        }
+
+        animatedJob = viewModelScope.launch {
+            val outcome = runCatching { animatedPosterRepository.search(query) }
+            _posterChoice.update { current ->
+                outcome.fold(
+                    onSuccess = { current.copy(animatedLoading = false, animated = it) },
+                    onFailure = {
+                        current.copy(
+                            animatedLoading = false,
+                            animated = emptyList(),
+                            animatedError = it.message ?: "Recherche impossible.",
+                        )
+                    },
+                )
+            }
+        }
     }
 
     fun onPosterChosen(url: String) {

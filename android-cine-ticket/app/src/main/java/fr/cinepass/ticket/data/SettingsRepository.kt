@@ -23,6 +23,7 @@ class SettingsRepository(private val context: Context) {
     val settings: Flow<AppSettings> = context.settingsDataStore.data.map { prefs ->
         AppSettings(
             tmdbApiKey = prefs[TMDB_API_KEY].orEmpty(),
+            giphyApiKey = prefs[GIPHY_API_KEY].orEmpty(),
             walletIssuerId = prefs[WALLET_ISSUER_ID].orEmpty(),
             walletIssuerName = prefs[WALLET_ISSUER_NAME].orEmpty(),
             walletClassSuffix = prefs[WALLET_CLASS_SUFFIX].orEmpty(),
@@ -38,6 +39,7 @@ class SettingsRepository(private val context: Context) {
     suspend fun save(settings: AppSettings) {
         context.settingsDataStore.edit { prefs ->
             prefs[TMDB_API_KEY] = settings.tmdbApiKey.trim()
+            prefs[GIPHY_API_KEY] = settings.giphyApiKey.trim()
             prefs[WALLET_ISSUER_ID] = settings.walletIssuerId.trim()
             prefs[WALLET_ISSUER_NAME] = settings.walletIssuerName.trim()
             prefs[WALLET_CLASS_SUFFIX] = settings.walletClassSuffix.trim()
@@ -54,6 +56,7 @@ class SettingsRepository(private val context: Context) {
 
     private companion object {
         val TMDB_API_KEY = stringPreferencesKey("tmdb_api_key")
+        val GIPHY_API_KEY = stringPreferencesKey("giphy_api_key")
         val WALLET_ISSUER_ID = stringPreferencesKey("wallet_issuer_id")
         val WALLET_ISSUER_NAME = stringPreferencesKey("wallet_issuer_name")
         val WALLET_CLASS_SUFFIX = stringPreferencesKey("wallet_class_suffix")

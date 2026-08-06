@@ -60,21 +60,30 @@ class TicketRepository(
     /** Télécharge l'affiche TMDB pour que le billet reste consultable hors ligne. */
     suspend fun importPosterFromUrl(url: String): String? = withContext(Dispatchers.IO) {
         val dir = File(context.filesDir, POSTER_DIR).apply { mkdirs() }
-        val target = File(dir, "${UUID.randomUUID()}.jpg")
         runCatching {
             val connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 15_000
                 readTimeout = 20_000
+                instanceFollowRedirects = true
             }
             try {
                 if (connection.responseCode !in 200..299) return@runCatching null
+
+                // Une affiche animée doit rester un .gif : on suit le type annoncé.
+                val extension = when (connection.contentType?.substringBefore(';')?.trim()) {
+                    "image/gif" -> "gif"
+                    "image/webp" -> "webp"
+                    "image/png" -> "png"
+                    else -> "jpg"
+                }
+                val target = File(dir, "${UUID.randomUUID()}.$extension")
                 connection.inputStream.use { input ->
                     target.outputStream().use { output -> input.copyTo(output) }
                 }
+                Uri.fromFile(target).toString()
             } finally {
                 connection.disconnect()
             }
-            Uri.fromFile(target).toString()
         }.getOrNull()
     }
 

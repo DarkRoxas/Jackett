@@ -98,6 +98,9 @@ fun TicketEditScreen(
     PosterChoiceDialog(
         state = posterChoice,
         onSelect = viewModel::onPosterChosen,
+        onAnimatedTabOpened = viewModel::onAnimatedTabOpened,
+        onAnimatedQueryChange = viewModel::onAnimatedQueryChange,
+        onAnimatedSearch = viewModel::searchAnimated,
         onDismiss = viewModel::closePosterChoice,
     )
 
