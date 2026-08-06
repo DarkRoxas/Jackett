@@ -15,12 +15,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
@@ -105,8 +109,9 @@ fun TicketEditScreen(
     )
 
     val posterPicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia(),
-    ) { uri -> uri?.let(viewModel::onPosterPicked) }
+        // Sélection multiple : on constitue la galerie du billet en une fois.
+        ActivityResultContracts.PickMultipleVisualMedia(),
+    ) { uris -> viewModel.onPostersPicked(uris) }
 
     Scaffold(
         topBar = {
@@ -254,7 +259,7 @@ fun TicketEditScreen(
             }
 
             PosterPicker(
-                posterUri = state.posterUri,
+                posterUris = state.posterUris,
                 downloading = state.posterDownloading,
                 canChooseFromTmdb = state.tmdbId != null,
                 onPick = {
@@ -263,7 +268,8 @@ fun TicketEditScreen(
                     )
                 },
                 onChooseFromTmdb = viewModel::openPosterChoice,
-                onClear = viewModel::onPosterCleared,
+                onMoveToFront = viewModel::onPosterMovedToFront,
+                onRemove = viewModel::onPosterRemoved,
             )
 
             OutlinedTextField(
@@ -375,18 +381,41 @@ private fun BarcodeFormatDropdown(
 
 @Composable
 private fun PosterPicker(
-    posterUri: String?,
+    posterUris: List<String>,
     downloading: Boolean,
     canChooseFromTmdb: Boolean,
     onPick: () -> Unit,
     onChooseFromTmdb: () -> Unit,
-    onClear: () -> Unit,
+    onMoveToFront: (String) -> Unit,
+    onRemove: (String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(R.string.field_poster), style = MaterialTheme.typography.labelLarge)
+        Text(
+            text = stringResource(R.string.field_posters),
+            style = MaterialTheme.typography.labelLarge,
+        )
 
-        when {
-            downloading -> Row(verticalAlignment = Alignment.CenterVertically) {
+        if (posterUris.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.posters_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                itemsIndexed(posterUris, key = { _, uri -> uri }) { index, uri ->
+                    PosterThumb(
+                        uri = uri,
+                        isCover = index == 0,
+                        onMakeCover = { onMoveToFront(uri) },
+                        onRemove = { onRemove(uri) },
+                    )
+                }
+            }
+        }
+
+        if (downloading) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                 Spacer(Modifier.width(10.dp))
                 Text(
@@ -394,16 +423,6 @@ private fun PosterPicker(
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-
-            // Aperçu non rogné : c'est l'affiche entière qui sera montrée sur le billet.
-            posterUri != null -> AsyncImage(
-                model = posterUri,
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .height(220.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-            )
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -418,9 +437,43 @@ private fun PosterPicker(
                 }
             }
         }
+    }
+}
 
-        if (posterUri != null) {
-            TextButton(onClick = onClear) { Text(stringResource(R.string.action_remove_poster)) }
+@Composable
+private fun PosterThumb(
+    uri: String,
+    isCover: Boolean,
+    onMakeCover: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box {
+            AsyncImage(
+                model = uri,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(width = 100.dp, height = 150.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(enabled = !isCover, onClick = onMakeCover),
+            )
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier.align(Alignment.TopEnd).size(28.dp),
+            ) {
+                Icon(
+                    Icons.Default.Cancel,
+                    contentDescription = stringResource(R.string.action_remove_poster),
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            }
         }
+        Text(
+            text = stringResource(if (isCover) R.string.poster_cover else R.string.poster_make_cover),
+            style = MaterialTheme.typography.labelSmall,
+            color = if (isCover) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

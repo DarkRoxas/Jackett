@@ -14,6 +14,7 @@ enregistre comme billets électroniques dans **Google Wallet (Google Pay)**.
 | **Archivage local** | Base Room chiffrée par le stockage privé de l'app : film, année, cinéma, date/heure, salle, sièges, référence, notes, affiche. |
 | **Configuration dans l'app** | Écran de bienvenue au premier lancement puis écran de réglages : clé TMDB et paramètres Google Wallet se saisissent sur l'appareil, sans recompiler. |
 | **Recherche de films** | Recherche TMDB depuis le formulaire : le titre, l'année et l'affiche sélectionnés remplissent la fiche, et l'affiche est téléchargée en local pour rester consultable hors ligne. |
+| **Plusieurs affiches** | Un billet peut en porter autant qu'on veut : la galerie reste ouverte pendant la sélection, la première sert de couverture, et la fiche les feuillette. |
 | **Choix de l'affiche** | L'affiche retenue est la française la mieux notée de la galerie TMDB — celle exploitée en salle. « Autre affiche du film » ouvre la galerie complète si ce n'est pas la bonne. |
 | **Haute définition** | La sélection écarte tout ce qui fait moins de 1000 px de large, affiche la résolution sous chaque vignette et enregistre le fichier en résolution d'origine. |
 | **Affiches animées** | Onglet « Animées » dans le choix de l'affiche : recherche GIPHY, format vertical et grande taille en tête, aperçu léger dans la grille. L'animation retenue joue sur la fiche et en plein écran. |
@@ -22,7 +23,7 @@ enregistre comme billets électroniques dans **Google Wallet (Google Pay)**.
 | **Année de sortie** | Affichée partout sous la forme « Dune (2021) », y compris dans le pass Wallet : deux films homonymes restent distinguables. |
 | **Onglets À venir / Archives** | Un billet bascule automatiquement dans les archives 4 h après le début de la séance ; l'archivage manuel reste possible. |
 | **Mise en page façon Wallet** | Informations de séance, code-barres compact, puis l'affiche entière — jamais rognée — sur toute la largeur. |
-| **Plein écran** | Un appui sur l'affiche ou sur le code l'ouvre seul à l'écran : barres système masquées, luminosité au maximum, fond noir pour l'affiche et blanc pour le code. |
+| **Plein écran** | Un appui sur une affiche ou sur le code l'ouvre seul à l'écran : barres système masquées, luminosité au maximum, fond noir pour l'affiche et blanc pour le code. Les affiches se feuillettent du doigt. |
 | **Code-barres** | Rendu local via ZXing : QR Code, Aztec, PDF417, Data Matrix, Code 128, Code 39, EAN-13, ITF. Toujours affiché noir sur blanc, quel que soit le thème. |
 | **Luminosité maximale** | À l'ouverture d'un billet, l'écran passe au maximum et la mise en veille est bloquée, pour que le scanner de la salle lise le code même en plein jour. Réglage système inchangé, valeur restaurée en quittant l'écran. |
 | **Google Wallet** | Bouton « Ajouter à Google Wallet » : génère un pass `EventTicket` (film, cinéma, date, salle, siège, code-barres) et l'enregistre via `PayClient.savePassesJwt`. |

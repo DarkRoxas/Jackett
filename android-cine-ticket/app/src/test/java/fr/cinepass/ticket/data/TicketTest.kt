@@ -52,6 +52,18 @@ class TicketTest {
     }
 
     @Test
+    fun `the cover is the first poster of the list`() {
+        val ticket = ticket(now).copy(posterUris = listOf("file:///a.jpg", "file:///b.jpg"))
+
+        assertEquals("file:///a.jpg", ticket.posterUri)
+    }
+
+    @Test
+    fun `a ticket without poster has no cover`() {
+        assertEquals(null, ticket(now).posterUri)
+    }
+
+    @Test
     fun `screening date time uses the device time zone`() {
         val dateTime = ticket(now).screeningDateTime
 

@@ -28,8 +28,11 @@ data class Ticket(
     /** Vide quand le billet n'a pas de code à présenter : le bloc n'est alors pas affiché. */
     val barcodeValue: String = "",
     val barcodeFormat: TicketBarcodeFormat = TicketBarcodeFormat.QR_CODE,
-    /** URI locale (fichier copié dans le stockage interne) de l'affiche. */
-    val posterUri: String? = null,
+    /**
+     * Affiches locales du billet (fichiers copiés dans le stockage interne),
+     * dans l'ordre d'affichage. La première sert de couverture.
+     */
+    val posterUris: List<String> = emptyList(),
     /** Film TMDB associé, pour pouvoir rechoisir une affiche plus tard. */
     val tmdbId: Int? = null,
     val notes: String? = null,
@@ -48,6 +51,9 @@ data class Ticket(
         get() = releaseYear?.let { "$movieTitle ($it)" } ?: movieTitle
 
     val hasBarcode: Boolean get() = barcodeValue.isNotBlank()
+
+    /** Affiche de couverture : liste, vignette et pass s'appuient dessus. */
+    val posterUri: String? get() = posterUris.firstOrNull()
 
     /** Un billet reste « à venir » jusqu'à 4 h après le début de la séance. */
     fun isUpcoming(now: Long = System.currentTimeMillis()): Boolean =

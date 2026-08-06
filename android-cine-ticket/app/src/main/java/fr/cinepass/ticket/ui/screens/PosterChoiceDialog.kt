@@ -16,7 +16,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
@@ -86,6 +88,15 @@ fun PosterChoiceDialog(
             },
         ) { padding ->
             Column(Modifier.padding(padding).fillMaxSize()) {
+                if (state.chosen.isNotEmpty()) {
+                    Text(
+                        text = "${state.chosen.size} affiche(s) ajoutée(s) — fermez quand vous avez fini.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
+
                 TabRow(selectedTabIndex = selectedTab) {
                     Tab(
                         selected = selectedTab == 0,
@@ -127,6 +138,7 @@ private fun StillPosters(state: PosterChoiceState, onSelect: (String) -> Unit) {
                 key = { it.url },
                 preview = { it.thumbnailUrl },
                 caption = { it.resolutionLabel },
+                isChosen = { it.url in state.chosen },
                 onSelect = { onSelect(it.url) },
             )
         }
@@ -180,6 +192,7 @@ private fun AnimatedPosters(
                     key = { it.id },
                     preview = { it.previewUrl },
                     caption = { it.resolutionLabel },
+                    isChosen = { it.url in state.chosen },
                     onSelect = { onSelect(it.url) },
                 )
             }
@@ -187,12 +200,17 @@ private fun AnimatedPosters(
     }
 }
 
+/**
+ * Grille commune aux deux onglets. Un appui ajoute l'affiche sans fermer la
+ * boîte : on en sélectionne autant qu'on veut, les retenues étant cochées.
+ */
 @Composable
 private fun <T> PosterGrid(
     items: List<T>,
     key: (T) -> Any,
     preview: (T) -> String,
     caption: (T) -> String,
+    isChosen: (T) -> Boolean,
     onSelect: (T) -> Unit,
 ) {
     LazyVerticalGrid(
@@ -202,17 +220,37 @@ private fun <T> PosterGrid(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         items(items, key = key) { item ->
+            val chosen = isChosen(item)
+
             Column(modifier = Modifier.clickable { onSelect(item) }) {
-                AsyncImage(
-                    model = preview(item),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(2f / 3f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                )
+                Box {
+                    AsyncImage(
+                        model = preview(item),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(2f / 3f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                    )
+                    if (chosen) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.45f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = "Affiche retenue",
+                                tint = MaterialTheme.colorScheme.inverseOnSurface,
+                                modifier = Modifier.size(36.dp),
+                            )
+                        }
+                    }
+                }
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = caption(item),

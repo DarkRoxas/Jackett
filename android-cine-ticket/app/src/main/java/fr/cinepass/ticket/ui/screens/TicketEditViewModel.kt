@@ -39,7 +39,7 @@ data class TicketFormState(
     val bookingReference: String = "",
     val barcodeValue: String = "",
     val barcodeFormat: TicketBarcodeFormat = TicketBarcodeFormat.QR_CODE,
-    val posterUri: String? = null,
+    val posterUris: List<String> = emptyList(),
     val tmdbId: Int? = null,
     val notes: String = "",
     val loading: Boolean = true,
@@ -74,6 +74,8 @@ data class PosterChoiceState(
     val animatedError: String? = null,
     /** La première ouverture de l'onglet déclenche la recherche. */
     val animatedSearched: Boolean = false,
+    /** URL déjà ajoutées pendant cette ouverture, pour les marquer d'une coche. */
+    val chosen: Set<String> = emptySet(),
 )
 
 class TicketEditViewModel(
@@ -123,7 +125,7 @@ class TicketEditViewModel(
                     bookingReference = existing.bookingReference.orEmpty(),
                     barcodeValue = existing.barcodeValue,
                     barcodeFormat = existing.barcodeFormat,
-                    posterUri = existing.posterUri,
+                    posterUris = existing.posterUris,
                     tmdbId = existing.tmdbId,
                     notes = existing.notes.orEmpty(),
                     loading = false,
@@ -218,6 +220,11 @@ class TicketEditViewModel(
         }
 
         viewModelScope.launch {
+            // Changer de film repart d'une liste vide : les affiches du film
+            // précédent n'ont plus rien à faire sur ce billet.
+            _state.value.posterUris.forEach { repository.deletePoster(it) }
+            _state.update { it.copy(posterUris = emptyList()) }
+
             // On ne se contente pas de l'affiche « primaire » de la recherche :
             // la galerie complète permet de retenir l'affiche française la
             // mieux notée, c'est-à-dire celle exploitée en salle.
@@ -294,8 +301,11 @@ class TicketEditViewModel(
         }
     }
 
+    /** La galerie reste ouverte : on ajoute autant d'affiches que voulu. */
     fun onPosterChosen(url: String) {
-        _posterChoice.update { it.copy(visible = false) }
+        if (_posterChoice.value.chosen.contains(url)) return
+
+        _posterChoice.update { it.copy(chosen = it.chosen + url) }
         _state.update { it.copy(posterDownloading = true) }
         viewModelScope.launch { downloadPoster(url) }
     }
@@ -304,22 +314,34 @@ class TicketEditViewModel(
         val imported = url?.let { repository.importPosterFromUrl(it) }
         _state.update {
             if (imported == null) it.copy(posterDownloading = false)
-            else it.copy(posterUri = imported, posterDownloading = false)
+            else it.copy(posterUris = it.posterUris + imported, posterDownloading = false)
         }
+    }
+
+    fun onPosterMovedToFront(uri: String) {
+        _state.update { it.copy(posterUris = listOf(uri) + (it.posterUris - uri)) }
+    }
+
+    fun onPosterRemoved(uri: String) {
+        _state.update { it.copy(posterUris = it.posterUris - uri) }
+        viewModelScope.launch { repository.deletePoster(uri) }
     }
 
     // --- Affiche ---
 
-    fun onPosterPicked(uri: Uri) {
+    fun onPostersPicked(uris: List<Uri>) {
+        if (uris.isEmpty()) return
+        _state.update { it.copy(posterDownloading = true) }
+
         viewModelScope.launch {
-            val imported = repository.importPoster(uri) ?: return@launch
-            _state.update { it.copy(posterUri = imported) }
+            val imported = uris.mapNotNull { repository.importPoster(it) }
+            _state.update {
+                it.copy(posterUris = it.posterUris + imported, posterDownloading = false)
+            }
         }
     }
 
-    fun onPosterCleared() {
-        _state.update { it.copy(posterUri = null) }
-    }
+
 
     fun save(onSaved: (String) -> Unit) {
         val form = _state.value
@@ -344,17 +366,16 @@ class TicketEditViewModel(
             bookingReference = form.bookingReference.trim().ifBlank { null },
             barcodeValue = form.barcodeValue.trim(),
             barcodeFormat = form.barcodeFormat,
-            posterUri = form.posterUri,
+            posterUris = form.posterUris,
             tmdbId = form.tmdbId,
             notes = form.notes.trim().ifBlank { null },
         )
 
         viewModelScope.launch {
-            // L'affiche remplacée n'est plus référencée : on libère le fichier.
-            val previousPoster = base?.posterUri
-            if (previousPoster != null && previousPoster != ticket.posterUri) {
-                repository.deletePoster(previousPoster)
-            }
+            // Les affiches retirées ne sont plus référencées : on libère les fichiers.
+            base?.posterUris.orEmpty()
+                .filterNot { it in ticket.posterUris }
+                .forEach { repository.deletePoster(it) }
             repository.save(ticket)
             onSaved(ticket.id)
         }

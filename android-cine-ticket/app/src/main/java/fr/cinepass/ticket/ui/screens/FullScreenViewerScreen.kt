@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -77,21 +79,34 @@ fun FullScreenViewerScreen(
         val current = ticket
         if (current != null) when (mode) {
             ViewerMode.POSTER -> {
-                val poster = current.posterUri
-                if (poster == null) {
+                val posters = current.posterUris
+                if (posters.isEmpty()) {
                     Text(
                         text = "Aucune affiche pour ce billet.",
                         color = foreground,
                         textAlign = TextAlign.Center,
                     )
                 } else {
-                    AsyncImage(
-                        model = poster,
-                        contentDescription = stringResource(R.string.poster_fullscreen),
-                        // Fit : l'affiche entière reste visible, sans rognage.
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                    val pagerState = rememberPagerState(pageCount = { posters.size })
+
+                    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                        AsyncImage(
+                            model = posters[page],
+                            contentDescription = stringResource(R.string.poster_fullscreen),
+                            // Fit : l'affiche entière reste visible, sans rognage.
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+
+                    if (posters.size > 1) {
+                        Text(
+                            text = "${pagerState.currentPage + 1} / ${posters.size}",
+                            color = foreground.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.align(Alignment.TopCenter).padding(top = 24.dp),
+                        )
+                    }
                 }
             }
 

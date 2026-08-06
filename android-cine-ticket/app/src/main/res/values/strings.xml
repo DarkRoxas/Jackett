@@ -23,6 +23,10 @@
     <string name="field_date">Date de la séance</string>
     <string name="field_time">Heure de la séance</string>
     <string name="field_poster">Affiche</string>
+    <string name="field_posters">Affiches</string>
+    <string name="posters_hint">La première sert de couverture. Appuyez sur une autre pour la mettre en tête.</string>
+    <string name="poster_cover">Couverture</string>
+    <string name="poster_make_cover">Mettre en tête</string>
 
     <string name="action_save">Enregistrer</string>
     <string name="action_cancel">Annuler</string>

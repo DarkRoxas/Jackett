@@ -13,7 +13,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -163,17 +166,12 @@ fun TicketDetailScreen(
                 onBarcodeClick = { onOpenViewer(current.id, ViewerMode.BARCODE) },
             )
 
-            // Un appui sur l'affiche l'ouvre seule, en luminosité maximale.
-            current.posterUri?.let { poster ->
-                AsyncImage(
-                    model = poster,
-                    contentDescription = stringResource(R.string.poster_fullscreen),
-                    // FillWidth dans une colonne scrollable : la hauteur suit le
-                    // ratio réel de l'affiche, donc plus aucun rognage.
-                    contentScale = ContentScale.FillWidth,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onOpenViewer(current.id, ViewerMode.POSTER) },
+            // Un appui sur une affiche l'ouvre seule, en luminosité maximale ;
+            // les suivantes se feuillettent du doigt.
+            if (current.posterUris.isNotEmpty()) {
+                PosterPager(
+                    posterUris = current.posterUris,
+                    onOpen = { onOpenViewer(current.id, ViewerMode.POSTER) },
                 )
             }
 
@@ -221,6 +219,45 @@ fun TicketDetailScreen(
                 }
             },
         )
+    }
+}
+
+/**
+ * Les affiches du billet, feuilletables. Chacune s'affiche entière, à la
+ * largeur de l'écran ; un appui ouvre la vue plein écran.
+ */
+@Composable
+private fun PosterPager(posterUris: List<String>, onOpen: () -> Unit) {
+    val pagerState = rememberPagerState(pageCount = { posterUris.size })
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        HorizontalPager(state = pagerState) { page ->
+            AsyncImage(
+                model = posterUris[page],
+                contentDescription = stringResource(R.string.poster_fullscreen),
+                // FillWidth : la hauteur suit le ratio réel de l'affiche, donc
+                // plus aucun rognage.
+                contentScale = ContentScale.FillWidth,
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen),
+            )
+        }
+
+        if (posterUris.size > 1) {
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                repeat(posterUris.size) { index ->
+                    Box(
+                        modifier = Modifier
+                            .size(if (index == pagerState.currentPage) 8.dp else 6.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (index == pagerState.currentPage) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            ),
+                    )
+                }
+            }
+        }
     }
 }
 

@@ -31,7 +31,7 @@ class TicketRepository(
         dao.markSavedToWallet(id, objectId, System.currentTimeMillis())
 
     suspend fun delete(ticket: Ticket) {
-        ticket.posterUri?.let { deletePoster(it) }
+        ticket.posterUris.forEach { deletePoster(it) }
         dao.delete(ticket)
     }
 
